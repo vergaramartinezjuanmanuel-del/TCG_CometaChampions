@@ -1,0 +1,23 @@
+{
+    "name": "CometaChampions.Runtime",
+    "rootNamespace": "CometaChampions.Runtime",
+    "references": [
+        "CometaChampions.Core",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Purchasing",
+        "Unity.Purchasing.Stores",
+        "UnityEngine.Advertisements"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

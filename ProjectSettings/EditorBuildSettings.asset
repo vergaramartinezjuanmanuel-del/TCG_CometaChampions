@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Project/Scenes/Home.unity
+    guid: 786ebb428953d4205a87307ff1dbf466
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle.unity
+    guid: e421ddcd58b674dd3b80fb447066361e
+  - enabled: 1
+    path: Assets/_Project/Scenes/CardShowcase.unity
+    guid: ef4551dfdede240869150f1875437a6a
+  m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}

@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="CometaChampions.Tests.csproj" />
+  <Project Path="CometaChampions.Runtime.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="CometaChampions.Core.csproj" />
+  <Project Path="CometaChampions.Editor.csproj" />
+</Solution>

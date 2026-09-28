@@ -1,0 +1,149 @@
+using System;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using CometaChampions.Core.Models;
+using CometaChampions.Runtime.Cards;
+
+namespace CometaChampions.Runtime.Battle
+{
+    /// <summary>
+    /// Represents a single card slot on an arena lane (either for the Player or the AI).
+    /// Displays card thumbnail, effective power badge, and undo pill if playable this turn.
+    /// </summary>
+    public class BattleCardSlotView : MonoBehaviour
+    {
+        [Header("UI Components")]
+        [SerializeField] private Image cardThumbnail;
+        [SerializeField] private Image slotFrame;
+        [SerializeField] private GameObject powerBadgeRoot;
+        [SerializeField] private TextMeshProUGUI powerBadgeText;
+        [SerializeField] private GameObject undoBadgeRoot;
+        [SerializeField] private Button slotButton;
+
+        public CardDefinition CurrentCard { get; private set; }
+        public int LaneIndex { get; private set; }
+        public int SlotIndex { get; private set; }
+        public bool CanUndo { get; private set; }
+
+        private Action<int, int> onSlotClicked;
+
+        private void Awake()
+        {
+            if (slotButton == null) slotButton = GetComponent<Button>();
+            if (slotButton != null)
+            {
+                slotButton.onClick.AddListener(HandleSlotClicked);
+            }
+
+            var rootGraphic = GetComponent<Graphic>();
+            foreach (var g in GetComponentsInChildren<Graphic>(true))
+            {
+                if (g != rootGraphic)
+                {
+                    g.raycastTarget = false;
+                }
+            }
+        }
+
+        public void Setup(
+            CardDefinition card,
+            int effectivePower,
+            bool canUndo,
+            int laneIndex,
+            int slotIndex,
+            Action<int, int> onClickCallback,
+            bool isFaceDown = false)
+        {
+            CurrentCard = card;
+            LaneIndex = laneIndex;
+            SlotIndex = slotIndex;
+            CanUndo = canUndo;
+            onSlotClicked = onClickCallback;
+
+            if (card == null)
+            {
+                // Empty slot appearance
+                if (cardThumbnail != null)
+                {
+                    cardThumbnail.enabled = false;
+                    cardThumbnail.sprite = null;
+                }
+
+                if (slotFrame != null)
+                {
+                    slotFrame.color = new Color(1f, 1f, 1f, 0.15f);
+                }
+
+                if (powerBadgeRoot != null) powerBadgeRoot.SetActive(false);
+                if (undoBadgeRoot != null) undoBadgeRoot.SetActive(false);
+            }
+            else if (isFaceDown)
+            {
+                // Unrevealed / Face-down opponent card (Rule 17)
+                if (cardThumbnail != null)
+                {
+                    cardThumbnail.enabled = true;
+                    cardThumbnail.sprite = null;
+                    cardThumbnail.color = new Color(0.12f, 0.15f, 0.28f, 0.95f); // Deep mysterious card back color
+                }
+
+                if (slotFrame != null)
+                {
+                    slotFrame.color = new Color(0.85f, 0.65f, 0.15f, 0.9f); // Gold mystery glow
+                }
+
+                if (powerBadgeRoot != null)
+                {
+                    powerBadgeRoot.SetActive(true);
+                    if (powerBadgeText != null)
+                    {
+                        powerBadgeText.text = "❓";
+                    }
+                }
+
+                if (undoBadgeRoot != null) undoBadgeRoot.SetActive(false);
+            }
+            else
+            {
+                // Occupied slot appearance (revealed)
+                if (cardThumbnail != null)
+                {
+                    var sprite = Card3D.GetCardThumbnail(card) ?? Card3D.GetReversoThumbnail("oro");
+                    cardThumbnail.sprite = sprite;
+                    cardThumbnail.color = Color.white;
+                    cardThumbnail.enabled = true;
+                }
+
+                if (slotFrame != null)
+                {
+                    slotFrame.color = canUndo
+                        ? new Color(0.3f, 0.85f, 1f, 0.9f) // Bright cyan tint if undoable
+                        : new Color(1f, 1f, 1f, 0.45f);
+                }
+
+                if (powerBadgeRoot != null)
+                {
+                    powerBadgeRoot.SetActive(true);
+                    if (powerBadgeText != null)
+                    {
+                        powerBadgeText.text = effectivePower.ToString();
+                    }
+                }
+
+                if (undoBadgeRoot != null)
+                {
+                    undoBadgeRoot.SetActive(canUndo);
+                }
+            }
+        }
+
+        private void HandleSlotClicked()
+        {
+            if (CanUndo && onSlotClicked != null)
+            {
+                onSlotClicked.Invoke(LaneIndex, SlotIndex);
+            }
+        }
+    }
+}

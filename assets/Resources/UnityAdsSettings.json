@@ -1,0 +1,9 @@
+{
+  "androidGameId": "5738200",
+  "iosGameId": "5738201",
+  "androidAdUnitId": "Rewarded_Android",
+  "iosAdUnitId": "Rewarded_iOS",
+  "testMode": true,
+  "enableEditorSimulation": true,
+  "rewardGoldCoins": 100
+}
