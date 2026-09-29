@@ -69,6 +69,30 @@ namespace CometaChampions.Editor
             var saveMgrObj = new GameObject("SaveManager");
             saveMgrObj.AddComponent<SaveManager>();
 
+            // 4.5 Background Canvas (ScreenSpaceCamera behind 3D Card)
+            var bgCanvasObj = new GameObject("Background_Canvas");
+            var bgCanvas = bgCanvasObj.AddComponent<Canvas>();
+            bgCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            bgCanvas.worldCamera = camera;
+            bgCanvas.planeDistance = 25f;
+            bgCanvas.sortingOrder = -100;
+            var bgScaler = bgCanvasObj.AddComponent<CanvasScaler>();
+            bgScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            bgScaler.referenceResolution = new Vector2(1920, 1080);
+            bgScaler.matchWidthOrHeight = 0.5f;
+
+            var bgImageObj = CreateUIElement("Background_Image", bgCanvasObj.transform);
+            SetStretch(bgImageObj.GetComponent<RectTransform>());
+            var bgImage = bgImageObj.AddComponent<Image>();
+            var bgSprite = ArenaBackgroundProvider.GetBackgroundSprite(ArenaBackgroundCatalog.Pedestal3DActive);
+            if (bgSprite != null)
+            {
+                bgImage.sprite = bgSprite;
+            }
+            bgImage.color = Color.white;
+            bgImage.preserveAspect = false;
+            bgImage.raycastTarget = false;
+
             // 5. Canvas Hierarchy
             var canvasObj = new GameObject("Canvas");
             var canvas = canvasObj.AddComponent<Canvas>();
@@ -79,13 +103,14 @@ namespace CometaChampions.Editor
             scaler.matchWidthOrHeight = 0.5f;
             canvasObj.AddComponent<GraphicRaycaster>();
 
-            // Background anchor (empty RectTransform - camera clearFlags handles background color to keep 3D center view unobstructed)
+            // Background anchor (empty RectTransform)
             var bgObj = CreateUIElement("Background", canvasObj.transform);
             SetStretch(bgObj.GetComponent<RectTransform>());
 
             // Home Controller Component
             var homeController = canvasObj.AddComponent<Home>();
             var so = new SerializedObject(homeController);
+            so.FindProperty("homeBackgroundImage").objectReferenceValue = bgImage;
 
             // Header Bar
             var headerObj = CreateUIElement("HeaderBar", canvasObj.transform);
@@ -106,9 +131,8 @@ namespace CometaChampions.Editor
             titleTMP.color = Color.white;
             so.FindProperty("titleText").objectReferenceValue = titleTMP;
 
-            // Deck Management Button ("🃏 MI MAZO")
-            // Deck Management Button ("🃏 MI MAZO")
-            var deckBtn = CreateButton("DeckBtn", headerObj.transform, "🃏 MAZO (12/12)", new Vector2(405, -45), new Vector2(145, 48));
+            // Deck Management Button ("MI MAZO")
+            var deckBtn = CreateButton("DeckBtn", headerObj.transform, "MAZO (12/12)", new Vector2(405, -45), new Vector2(145, 48));
             var dImg = deckBtn.GetComponent<Image>();
             dImg.color = new Color(0.15f, 0.45f, 0.65f); // Deep oceanic blue
             var dTMP = deckBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -121,8 +145,8 @@ namespace CometaChampions.Editor
             so.FindProperty("deckButton").objectReferenceValue = deckBtn;
             so.FindProperty("deckButtonText").objectReferenceValue = dTMP;
 
-            // Battle Combat Navigation Button ("⚔️ COMBATE")
-            var battleBtn = CreateButton("BattleBtn", headerObj.transform, "⚔️ COMBATE", new Vector2(555, -45), new Vector2(145, 48));
+            // Battle Combat Navigation Button ("COMBATE")
+            var battleBtn = CreateButton("BattleBtn", headerObj.transform, "COMBATE", new Vector2(555, -45), new Vector2(145, 48));
             var batImg = battleBtn.GetComponent<Image>();
             batImg.color = new Color(0.85f, 0.25f, 0.20f); // Fiery combat crimson
             var batTMP = battleBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -135,7 +159,7 @@ namespace CometaChampions.Editor
             so.FindProperty("battleButton").objectReferenceValue = battleBtn;
 
             // Showcase 3D Navigation Button
-            var showcaseBtn = CreateButton("Showcase3DBtn", headerObj.transform, "🌟 SHOWCASE", new Vector2(705, -45), new Vector2(145, 48));
+            var showcaseBtn = CreateButton("Showcase3DBtn", headerObj.transform, "SHOWCASE", new Vector2(705, -45), new Vector2(145, 48));
             var scImg = showcaseBtn.GetComponent<Image>();
             scImg.color = new Color(0.12f, 0.42f, 0.62f);
             var scTMP = showcaseBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -147,8 +171,8 @@ namespace CometaChampions.Editor
             }
             so.FindProperty("showcase3DButton").objectReferenceValue = showcaseBtn;
 
-            // Daily Reward Pack Button ("🎁 PACK DIARIO")
-            var dailyBtn = CreateButton("DailyRewardBtn", headerObj.transform, "🎁 PACK DIARIO", new Vector2(855, -45), new Vector2(145, 48));
+            // Daily Reward Pack Button ("PACK DIARIO")
+            var dailyBtn = CreateButton("DailyRewardBtn", headerObj.transform, "PACK DIARIO", new Vector2(855, -45), new Vector2(145, 48));
             var dailyImg = dailyBtn.GetComponent<Image>();
             dailyImg.color = new Color(0.45f, 0.20f, 0.65f); // Royal amethyst purple
             var dailyTMP = dailyBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -178,8 +202,8 @@ namespace CometaChampions.Editor
             so.FindProperty("dailyRewardButton").objectReferenceValue = dailyBtn;
             so.FindProperty("dailyRewardBadge").objectReferenceValue = dailyBadgeObj;
 
-            // Card Pack Shop Navigation Button ("📦 SOBRES")
-            var packsBtn = CreateButton("PacksBtn", headerObj.transform, "📦 SOBRES", new Vector2(1005, -45), new Vector2(145, 48));
+            // Card Pack Shop Navigation Button ("SOBRES")
+            var packsBtn = CreateButton("PacksBtn", headerObj.transform, "SOBRES", new Vector2(1005, -45), new Vector2(145, 48));
             var pImg = packsBtn.GetComponent<Image>();
             pImg.color = new Color(0.85f, 0.55f, 0.12f); // Warm gold/amber
             var pTMP = packsBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -199,7 +223,7 @@ namespace CometaChampions.Editor
             coinTMP.GetComponent<RectTransform>().pivot = new Vector2(1, 0.5f);
             so.FindProperty("goldCoinsText").objectReferenceValue = coinTMP;
 
-            var dustTMP = CreateTMPText("EsenciaDustText", headerObj.transform, "✨ 150", new Vector2(-225, -45), new Vector2(105, 48), 26, TextAlignmentOptions.Right);
+            var dustTMP = CreateTMPText("EsenciaDustText", headerObj.transform, "150", new Vector2(-225, -45), new Vector2(105, 48), 26, TextAlignmentOptions.Right);
             dustTMP.fontStyle = FontStyles.Bold;
             dustTMP.color = new Color(0.78f, 0.48f, 1f); // Glowing amethyst/sparkle
             dustTMP.GetComponent<RectTransform>().anchorMin = new Vector2(1, 1);
@@ -445,7 +469,9 @@ namespace CometaChampions.Editor
                 if (pedMat.HasProperty("_Metallic")) pedMat.SetFloat("_Metallic", 0.6f);
                 if (pedMat.HasProperty("_Glossiness")) pedMat.SetFloat("_Glossiness", 0.7f);
                 if (pedMat.HasProperty("_Smoothness")) pedMat.SetFloat("_Smoothness", 0.7f);
-                pedestal.GetComponent<MeshRenderer>().sharedMaterial = pedMat;
+                var pedMr = pedestal.GetComponent<MeshRenderer>();
+                pedMr.sharedMaterial = pedMat;
+                pedMr.enabled = false; // Disabled to reveal the high-res pedestal artwork from the background
             }
 
             // Card3D component on the anchor
@@ -471,7 +497,7 @@ namespace CometaChampions.Editor
             ccpRect.sizeDelta = new Vector2(520, 130);
 
             // Drag hint text
-            var hintTMP = CreateTMPText("SwipePrompt", centerControlsPanel.transform, "🖱️ Arrastra libremente para rotar en 360°", new Vector2(0, 48), new Vector2(500, 24), 16, TextAlignmentOptions.Center);
+            var hintTMP = CreateTMPText("SwipePrompt", centerControlsPanel.transform, "Arrastra libremente para rotar en 360°", new Vector2(0, 48), new Vector2(500, 24), 16, TextAlignmentOptions.Center);
             hintTMP.color = new Color(0.75f, 0.82f, 0.92f, 0.9f);
             so.FindProperty("swipeToRotateIndicator").objectReferenceValue = hintTMP.gameObject;
 
@@ -487,9 +513,9 @@ namespace CometaChampions.Editor
             arLayout.childControlWidth = false;
             arLayout.childControlHeight = true;
 
-            var flipBtn = CreateButton("FlipButton", actionsRow.transform, "🔄 VOLTEAR", Vector2.zero, new Vector2(156, 40));
-            var spinBtn = CreateButton("AutoSpinButton", actionsRow.transform, "💫 AUTO-GIRO", Vector2.zero, new Vector2(156, 40));
-            var frontBtn = CreateButton("ResetFrontButton", actionsRow.transform, "🎯 FRENTE", Vector2.zero, new Vector2(156, 40));
+            var flipBtn = CreateButton("FlipButton", actionsRow.transform, "VOLTEAR", Vector2.zero, new Vector2(156, 40));
+            var spinBtn = CreateButton("AutoSpinButton", actionsRow.transform, "AUTO-GIRO", Vector2.zero, new Vector2(156, 40));
+            var frontBtn = CreateButton("ResetFrontButton", actionsRow.transform, "FRENTE", Vector2.zero, new Vector2(156, 40));
 
             flipBtn.GetComponent<Image>().color = new Color(0.18f, 0.42f, 0.65f);
             spinBtn.GetComponent<Image>().color = new Color(0.42f, 0.22f, 0.62f);
@@ -512,9 +538,9 @@ namespace CometaChampions.Editor
             rrLayout.childControlWidth = false;
             rrLayout.childControlHeight = true;
 
-            var revOro = CreateButton("Rev_Oro", reversoRow.transform, "👑 Oro", Vector2.zero, new Vector2(156, 36));
-            var revColor = CreateButton("Rev_Color", reversoRow.transform, "🎨 Color", Vector2.zero, new Vector2(156, 36));
-            var revBi = CreateButton("Rev_Bi", reversoRow.transform, "☯️ Bicolor", Vector2.zero, new Vector2(156, 36));
+            var revOro = CreateButton("Rev_Oro", reversoRow.transform, "ORO", Vector2.zero, new Vector2(156, 36));
+            var revColor = CreateButton("Rev_Color", reversoRow.transform, "COLOR", Vector2.zero, new Vector2(156, 36));
+            var revBi = CreateButton("Rev_Bi", reversoRow.transform, "BICOLOR", Vector2.zero, new Vector2(156, 36));
 
             so.FindProperty("reversoOroButton").objectReferenceValue = revOro;
             so.FindProperty("reversoColorButton").objectReferenceValue = revColor;
@@ -543,7 +569,7 @@ namespace CometaChampions.Editor
             var clanTMP = CreateTMPText("CardClan", rightPanel.transform, "CLAN: Depredadores", new Vector2(180, -70), new Vector2(250, 30), 22, TextAlignmentOptions.Left);
             so.FindProperty("cardClanText").objectReferenceValue = clanTMP;
 
-            var advantageTMP = CreateTMPText("ClanAdvantage", rightPanel.transform, "★ Ventaja contra: Míticos (+1 Daño)", new Vector2(25, -100), new Vector2(410, 30), 18, TextAlignmentOptions.Left);
+            var advantageTMP = CreateTMPText("ClanAdvantage", rightPanel.transform, "• Ventaja contra: Míticos (+1 Daño)", new Vector2(25, -100), new Vector2(410, 30), 18, TextAlignmentOptions.Left);
             advantageTMP.color = new Color(0.2f, 1f, 0.5f);
             so.FindProperty("clanAdvantageText").objectReferenceValue = advantageTMP;
 
@@ -630,7 +656,7 @@ namespace CometaChampions.Editor
             so.FindProperty("upgradeCostText").objectReferenceValue = costLabel;
 
             // Toggle In Deck Button (Card Details)
-            var deckToggleBtn = CreateButton("ToggleDeckBtn", rightPanel.transform, "➕ AÑADIR AL MAZO (0/2)", new Vector2(205, -705), new Vector2(380, 52));
+            var deckToggleBtn = CreateButton("ToggleDeckBtn", rightPanel.transform, "+ AÑADIR AL MAZO (0/2)", new Vector2(205, -705), new Vector2(380, 52));
             var dtImg = deckToggleBtn.GetComponent<Image>();
             dtImg.color = new Color(0.18f, 0.45f, 0.75f);
             var dtTMP = deckToggleBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -644,7 +670,7 @@ namespace CometaChampions.Editor
             so.FindProperty("toggleDeckCardButtonText").objectReferenceValue = dtTMP;
 
             // Craft Card Button (Option A - Esencia Cometa)
-            var craftBtn = CreateButton("CraftCardBtn", rightPanel.transform, "✨ CRAFTEAR CARTA (100 ✨)", new Vector2(205, -770), new Vector2(380, 50));
+            var craftBtn = CreateButton("CraftCardBtn", rightPanel.transform, "+ CRAFTEAR CARTA (100 ESENCIA)", new Vector2(205, -770), new Vector2(380, 50));
             var cbImg = craftBtn.GetComponent<Image>();
             cbImg.color = new Color(0.35f, 0.15f, 0.55f); // Deep arcane amethyst
             var cbTMP = craftBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -899,7 +925,7 @@ namespace CometaChampions.Editor
             dropdown.captionText = label;
 
             // Arrow indicator
-            var arrow = CreateTMPText("Arrow", root.transform, "▼", new Vector2(size.x / 2 - 20, 0), new Vector2(30, size.y), 14, TextAlignmentOptions.Center);
+            var arrow = CreateTMPText("Arrow", root.transform, "v", new Vector2(size.x / 2 - 20, 0), new Vector2(30, size.y), 14, TextAlignmentOptions.Center);
             arrow.color = new Color(0.8f, 0.8f, 0.9f);
 
             // Template (Dropdown popup window)
@@ -1096,15 +1122,15 @@ namespace CometaChampions.Editor
             cardsRect.sizeDelta = new Vector2(860, 300);
 
             // Card 1: 1,000 Coins
-            var pack1Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(-285, 0), "1,000", "MONEDAS", "🪙 Básico", "$0.99 USD", "");
+            var pack1Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(-285, 0), "1,000", "MONEDAS", "Básico", "$0.99 USD", "");
             so.FindProperty("buyPack1000Button").objectReferenceValue = pack1Btn;
 
             // Card 2: 5,000 Coins
-            var pack2Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(0, 0), "5,000", "MONEDAS", "🪙🪙 Aventurero", "$4.99 USD", "★ POPULAR");
+            var pack2Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(0, 0), "5,000", "MONEDAS", "Aventurero", "$4.99 USD", "POPULAR");
             so.FindProperty("buyPack5000Button").objectReferenceValue = pack2Btn;
 
             // Card 3: 10,000 Coins
-            var pack3Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(285, 0), "10,000", "MONEDAS", "🪙🪙🪙 Bóveda", "$8.99 USD", "★ MEJOR VALOR");
+            var pack3Btn = CreateCoinPackCard(cardsObj.transform, new Vector2(285, 0), "10,000", "MONEDAS", "Bóveda", "$8.99 USD", "MEJOR VALOR");
             so.FindProperty("buyPack10000Button").objectReferenceValue = pack3Btn;
 
             // Rewarded Ad Section
@@ -1118,14 +1144,14 @@ namespace CometaChampions.Editor
             var adImg = adSection.AddComponent<Image>();
             adImg.color = new Color(0.14f, 0.18f, 0.25f, 1f);
 
-            var adTitleTMP = CreateTMPText("AdTitle", adSection.transform, "🎬 ¡MONEDAS GRATIS CON UNITY ADS!", new Vector2(25, -28), new Vector2(520, 30), 19, TextAlignmentOptions.Left);
+            var adTitleTMP = CreateTMPText("AdTitle", adSection.transform, "¡MONEDAS GRATIS CON UNITY ADS!", new Vector2(25, -28), new Vector2(520, 30), 19, TextAlignmentOptions.Left);
             adTitleTMP.fontStyle = FontStyles.Bold;
             adTitleTMP.color = new Color(0.2f, 0.85f, 1f);
 
             var adDescTMP = CreateTMPText("AdDesc", adSection.transform, "Mira un breve anuncio patrocinado y recibe +100 Monedas de Oro gratis al instante.", new Vector2(25, -65), new Vector2(520, 40), 14, TextAlignmentOptions.Left);
             adDescTMP.color = new Color(0.75f, 0.8f, 0.9f);
 
-            var watchBtn = CreateButton("WatchAdBtn", adSection.transform, "VER ANUNCIO\n(+100 🪙)", new Vector2(-30, 0), new Vector2(230, 68));
+            var watchBtn = CreateButton("WatchAdBtn", adSection.transform, "VER ANUNCIO\n(+100 ORO)", new Vector2(-30, 0), new Vector2(230, 68));
             var wbRect = watchBtn.GetComponent<RectTransform>();
             wbRect.anchorMin = new Vector2(1, 0.5f);
             wbRect.anchorMax = new Vector2(1, 0.5f);
@@ -1255,7 +1281,7 @@ namespace CometaChampions.Editor
             modalSo.FindProperty("modalTitleText").objectReferenceValue = titleTMP;
 
             // Subtitle / Player Info
-            var infoTMP = CreateTMPText("ModalGoldText", headerObj.transform, "Tu Oro: 1,256 🪙  |  Nivel: 1", new Vector2(0, -56), new Vector2(600, 24), 16, TextAlignmentOptions.Center);
+            var infoTMP = CreateTMPText("ModalGoldText", headerObj.transform, "Tu Oro: 1,256 ORO  |  Nivel: 1", new Vector2(0, -56), new Vector2(600, 24), 16, TextAlignmentOptions.Center);
             infoTMP.color = new Color(0.85f, 0.85f, 0.9f);
             modalSo.FindProperty("modalGoldText").objectReferenceValue = infoTMP;
 
@@ -1563,7 +1589,7 @@ namespace CometaChampions.Editor
             modalSo.FindProperty("cardsGridParent").objectReferenceValue = gridObj.transform;
 
             // Action Buttons: AutoComplete and Close
-            var autoBtn = CreateButton("AutoCompleteBtn", dialogObj.transform, "⚡ AUTO-COMPLETAR", new Vector2(-150, 45), new Vector2(240, 50));
+            var autoBtn = CreateButton("AutoCompleteBtn", dialogObj.transform, "AUTO-COMPLETAR", new Vector2(-150, 45), new Vector2(240, 50));
             var abImg = autoBtn.GetComponent<Image>();
             abImg.color = new Color(0.18f, 0.55f, 0.85f);
             var abTMP = autoBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1616,7 +1642,7 @@ namespace CometaChampions.Editor
             dImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
 
             // Close 'X' Button
-            var closeXBtn = CreateButton("CloseXBtn", dialogObj.transform, "✕", new Vector2(495, 275), new Vector2(44, 44));
+            var closeXBtn = CreateButton("CloseXBtn", dialogObj.transform, "X", new Vector2(495, 275), new Vector2(44, 44));
             var cxImg = closeXBtn.GetComponent<Image>();
             cxImg.color = new Color(0.35f, 0.15f, 0.15f);
             modalSo.FindProperty("closeButton").objectReferenceValue = closeXBtn;
@@ -1666,7 +1692,7 @@ namespace CometaChampions.Editor
             ftImg.color = new Color(0.85f, 0.65f, 0.15f, 0.35f);
 
             var packContent = CreateTMPText("PackArtwork", wrapperObj.transform,
-                "⚡\n<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#FFD700>SET BASE</color></size>\n\n<size=26><b>TOMO 1</b></size>\n\n<size=11>⭐ 1 CARTA NUEVA\nGARANTIZADA ⭐</size>",
+                "<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#FFD700>SET BASE</color></size>\n\n<size=26><b>TOMO 1</b></size>\n\n<size=11>• 1 CARTA NUEVA\nGARANTIZADA •</size>",
                 Vector2.zero, new Vector2(210, 290), 16, TextAlignmentOptions.Center);
             packContent.color = Color.white;
             modalSo.FindProperty("sealedPackTitleText").objectReferenceValue = packContent;
@@ -1687,7 +1713,7 @@ namespace CometaChampions.Editor
             modalSo.FindProperty("remainingPacksBadgeText").objectReferenceValue = rbTMP;
 
             // Open Pack Button
-            var openBtn = CreateButton("OpenPackBtn", sealedPackObj.transform, "✨ ABRIR SOBRE ✨", new Vector2(0, -185), new Vector2(260, 52));
+            var openBtn = CreateButton("OpenPackBtn", sealedPackObj.transform, "ABRIR SOBRE", new Vector2(0, -185), new Vector2(260, 52));
             var opImg = openBtn.GetComponent<Image>();
             opImg.color = new Color(0.90f, 0.65f, 0.10f);
             var opTMP = openBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1718,7 +1744,7 @@ namespace CometaChampions.Editor
             cardsObj.SetActive(false);
 
             // Action Buttons Row
-            var revNextBtn = CreateButton("RevealNextBtn", dialogObj.transform, "DESCUBRIR CARTA ✨", new Vector2(-160, -170), new Vector2(230, 48));
+            var revNextBtn = CreateButton("RevealNextBtn", dialogObj.transform, "DESCUBRIR CARTA", new Vector2(-160, -170), new Vector2(230, 48));
             var rnImg = revNextBtn.GetComponent<Image>();
             rnImg.color = new Color(0.85f, 0.60f, 0.10f);
             var rnTMP = revNextBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1733,7 +1759,7 @@ namespace CometaChampions.Editor
             if (raTMP != null) { raTMP.fontSize = 15; raTMP.fontStyle = FontStyles.Bold; raTMP.color = Color.white; }
             modalSo.FindProperty("revealAllButton").objectReferenceValue = revAllBtn;
 
-            var doneBtn = CreateButton("NextPackOrDoneBtn", dialogObj.transform, "LISTO / VOLVER AL ÁLBUM ✔️", new Vector2(0, -170), new Vector2(320, 50));
+            var doneBtn = CreateButton("NextPackOrDoneBtn", dialogObj.transform, "LISTO / VOLVER AL ÁLBUM", new Vector2(0, -170), new Vector2(320, 50));
             var dBtnImg = doneBtn.GetComponent<Image>();
             dBtnImg.color = new Color(0.22f, 0.70f, 0.35f);
             var doneTMP = doneBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1790,13 +1816,13 @@ namespace CometaChampions.Editor
             dImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
 
             // Close 'X' Button
-            var closeXBtn = CreateButton("CloseXBtn", dialogObj.transform, "✕", new Vector2(410, 270), new Vector2(44, 44));
+            var closeXBtn = CreateButton("CloseXBtn", dialogObj.transform, "X", new Vector2(410, 270), new Vector2(44, 44));
             var cxImg = closeXBtn.GetComponent<Image>();
             cxImg.color = new Color(0.35f, 0.15f, 0.15f);
             modalSo.FindProperty("closeButton").objectReferenceValue = closeXBtn;
 
             // Title
-            var title = CreateTMPText("ShopTitle", dialogObj.transform, "📦 TIENDA DE SOBRES", new Vector2(0, 255), new Vector2(500, 45), 28, TextAlignmentOptions.Center);
+            var title = CreateTMPText("ShopTitle", dialogObj.transform, "TIENDA DE SOBRES", new Vector2(0, 255), new Vector2(500, 45), 28, TextAlignmentOptions.Center);
             title.fontStyle = FontStyles.Bold;
             title.color = Color.white;
 
@@ -1805,12 +1831,12 @@ namespace CometaChampions.Editor
             sub.color = new Color(1f, 0.85f, 0.2f);
 
             // Balances Row
-            var goldBal = CreateTMPText("GoldBalance", dialogObj.transform, "🪙 1,256", new Vector2(-150, 180), new Vector2(250, 35), 20, TextAlignmentOptions.Center);
+            var goldBal = CreateTMPText("GoldBalance", dialogObj.transform, "1,256 ORO", new Vector2(-150, 180), new Vector2(250, 35), 20, TextAlignmentOptions.Center);
             goldBal.fontStyle = FontStyles.Bold;
             goldBal.color = new Color(1f, 0.85f, 0.2f);
             modalSo.FindProperty("goldBalanceText").objectReferenceValue = goldBal;
 
-            var packBal = CreateTMPText("PackBalance", dialogObj.transform, "📦 3 Sobres Guardados", new Vector2(150, 180), new Vector2(250, 35), 18, TextAlignmentOptions.Center);
+            var packBal = CreateTMPText("PackBalance", dialogObj.transform, "3 Sobres Guardados", new Vector2(150, 180), new Vector2(250, 35), 18, TextAlignmentOptions.Center);
             packBal.fontStyle = FontStyles.Bold;
             packBal.color = new Color(0.4f, 0.85f, 1f);
             modalSo.FindProperty("boosterPacksBalanceText").objectReferenceValue = packBal;
@@ -1827,11 +1853,11 @@ namespace CometaChampions.Editor
             bImg.color = new Color(0.18f, 0.16f, 0.28f, 0.95f);
 
             var bText = CreateTMPText("BannerText", bannerObj.transform,
-                "<b>⭐ ¡GARANTÍA DE CARTA NUEVA EN CADA SOBRE!</b>\n<size=13>Cada sobre contiene 5 cartas y garantiza al menos 1 carta no poseída de tu colección.</size>\n<size=14><color=#FFD700>Precio: 500 🪙 Monedas por sobre</color></size>",
+                "<b>• ¡GARANTÍA DE CARTA NUEVA EN CADA SOBRE!</b>\n<size=13>Cada sobre contiene 5 cartas y garantiza al menos 1 carta no poseída de tu colección.</size>\n<size=14><color=#FFD700>Precio: 500 Monedas de Oro por sobre</color></size>",
                 Vector2.zero, new Vector2(740, 80), 15, TextAlignmentOptions.Center);
 
             // Buy 1 Pack & Buy 5 Packs Buttons Row
-            var buy1Btn = CreateButton("Buy1PackBtn", dialogObj.transform, "COMPRAR 1 SOBRE\n<size=13>500 🪙</size>", new Vector2(-160, -5), new Vector2(260, 60));
+            var buy1Btn = CreateButton("Buy1PackBtn", dialogObj.transform, "COMPRAR 1 SOBRE\n<size=13>500 ORO</size>", new Vector2(-160, -5), new Vector2(260, 60));
             var b1Img = buy1Btn.GetComponent<Image>();
             b1Img.color = new Color(0.85f, 0.55f, 0.12f);
             var b1TMP = buy1Btn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1839,7 +1865,7 @@ namespace CometaChampions.Editor
             modalSo.FindProperty("buy1PackButton").objectReferenceValue = buy1Btn;
             modalSo.FindProperty("buy1PackButtonText").objectReferenceValue = b1TMP;
 
-            var buy5Btn = CreateButton("Buy5PacksBtn", dialogObj.transform, "COMPRAR 5 SOBRES\n<size=13>2,500 🪙</size>", new Vector2(160, -5), new Vector2(260, 60));
+            var buy5Btn = CreateButton("Buy5PacksBtn", dialogObj.transform, "COMPRAR 5 SOBRES\n<size=13>2,500 ORO</size>", new Vector2(160, -5), new Vector2(260, 60));
             var b5Img = buy5Btn.GetComponent<Image>();
             b5Img.color = new Color(0.75f, 0.45f, 0.10f);
             var b5TMP = buy5Btn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1870,7 +1896,7 @@ namespace CometaChampions.Editor
             if (mTMP != null) { mTMP.fontSize = 14; mTMP.fontStyle = FontStyles.Bold; mTMP.color = Color.white; }
             modalSo.FindProperty("maxQtyButton").objectReferenceValue = maxBtn;
 
-            var buyCustBtn = CreateButton("BuyCustomBtn", dialogObj.transform, "COMPRAR 1 SOBRES (500 🪙)", new Vector2(165, -85), new Vector2(250, 44));
+            var buyCustBtn = CreateButton("BuyCustomBtn", dialogObj.transform, "COMPRAR 1 SOBRES (500 ORO)", new Vector2(165, -85), new Vector2(250, 44));
             var bcImg = buyCustBtn.GetComponent<Image>();
             bcImg.color = new Color(0.18f, 0.60f, 0.30f);
             var bcTMP = buyCustBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1887,7 +1913,7 @@ namespace CometaChampions.Editor
             bsRect.anchoredPosition = new Vector2(0, -165);
             bsRect.sizeDelta = new Vector2(620, 60);
 
-            var openBBtn = CreateButton("OpenBoosterBtn", boosterSec.transform, "✨ ABRIR SOBRE COMPRADO", new Vector2(-155, 0), new Vector2(295, 52));
+            var openBBtn = CreateButton("OpenBoosterBtn", boosterSec.transform, "ABRIR SOBRE COMPRADO", new Vector2(-155, 0), new Vector2(295, 52));
             var obImg = openBBtn.GetComponent<Image>();
             obImg.color = new Color(0.45f, 0.20f, 0.70f); // Royal purple
             var obTMP = openBBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -1896,7 +1922,7 @@ namespace CometaChampions.Editor
             modalSo.FindProperty("openBoosterButton").objectReferenceValue = openBBtn;
             modalSo.FindProperty("openBoosterButtonText").objectReferenceValue = obTMP;
 
-            var openRBtn = CreateButton("OpenRewardPackBtn", boosterSec.transform, "🎁 ABRIR RECOMPENSA", new Vector2(155, 0), new Vector2(295, 52));
+            var openRBtn = CreateButton("OpenRewardPackBtn", boosterSec.transform, "ABRIR RECOMPENSA", new Vector2(155, 0), new Vector2(295, 52));
             var orImg = openRBtn.GetComponent<Image>();
             orImg.color = new Color(0.18f, 0.45f, 0.65f); // Deep Cyan
             var orTMP = openRBtn.GetComponentInChildren<TextMeshProUGUI>();

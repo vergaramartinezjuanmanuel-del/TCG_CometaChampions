@@ -164,8 +164,8 @@ namespace CometaChampions.Runtime.Battle
                     if (deployButtonText != null)
                     {
                         deployButtonText.text = isAffordable 
-                            ? $"➕ Desplegar (🟢 {selectedCard.EnergyCost})" 
-                            : $"⚠️ Requiere 🟢 {selectedCard.EnergyCost}";
+                            ? $"+ Desplegar ({selectedCard.EnergyCost})" 
+                            : $"Requiere {selectedCard.EnergyCost} Energía";
                     }
 
                     if (deployButtonImage != null)

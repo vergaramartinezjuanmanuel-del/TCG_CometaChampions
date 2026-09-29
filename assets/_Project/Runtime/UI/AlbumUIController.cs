@@ -148,7 +148,7 @@ namespace CometaChampions.Runtime.UI
                 var targetClan = ClanAdvantage.GetAdvantageAgainst(card.Clan);
                 if (targetClan != ClanType.None)
                 {
-                    clanAdvantageTipText.text = $"<color=#00FF88>⚔️ Ventaja contra: {targetClan} (+1 Daño)</color>";
+                    clanAdvantageTipText.text = $"<color=#00FF88>• Ventaja contra: {targetClan} (+1 Daño)</color>";
                 }
                 else
                 {

@@ -212,15 +212,15 @@ namespace CometaChampions.Runtime.UI
             if (subtitleText != null)
             {
                 subtitleText.text = isRewardPack
-                    ? "3 cartas • Recompensa de Nivel • Progreso Foil Bicolor → Color → Oro"
+                    ? "3 cartas • Recompensa de Nivel • Progreso Foil Bicolor > Color > Oro"
                     : "Toca el sobre para abrirlo y descubrir tus cartas";
             }
 
             if (sealedPackTitleText != null)
             {
                 sealedPackTitleText.text = isRewardPack
-                    ? "⚡\n<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#00E5FF>RECOMPENSA DE NIVEL</color></size>\n\n<size=22><b>3 CARTAS</b></size>\n\n<size=11>⭐ PROGRESIÓN FOIL ⭐</size>"
-                    : "⚡\n<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#FFD700>SET BASE</color></size>\n\n<size=26><b>TOMO 1</b></size>\n\n<size=11>⭐ 1 CARTA NUEVA\nGARANTIZADA ⭐</size>";
+                    ? "<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#00E5FF>RECOMPENSA DE NIVEL</color></size>\n\n<size=22><b>3 CARTAS</b></size>\n\n<size=11>• PROGRESIÓN FOIL •</size>"
+                    : "<size=20><b>COMETA\nCHAMPIONS</b></size>\n<size=11><color=#FFD700>SET BASE</color></size>\n\n<size=26><b>TOMO 1</b></size>\n\n<size=11>• 1 CARTA NUEVA\nGARANTIZADA •</size>";
             }
 
             if (sealedPackSubtitleText != null)
@@ -245,7 +245,7 @@ namespace CometaChampions.Runtime.UI
 
             if (openPackButtonText != null)
             {
-                openPackButtonText.text = "✨ ABRIR SOBRE ✨";
+                openPackButtonText.text = "ABRIR SOBRE";
             }
 
             if (revealNextButton != null)
@@ -424,7 +424,7 @@ namespace CometaChampions.Runtime.UI
             btRect.anchorMax = Vector2.one;
             btRect.sizeDelta = Vector2.zero;
             var btTMP = backTextObj.AddComponent<TextMeshProUGUI>();
-            btTMP.text = "⚡\n<size=18><b>COMETA\nCHAMPIONS</b></size>\n<size=12>?</size>";
+            btTMP.text = "<size=18><b>COMETA\nCHAMPIONS</b></size>\n<size=14>?</size>";
             btTMP.alignment = TextAlignmentOptions.Center;
             btTMP.color = new Color(1f, 0.82f, 0.2f);
             btTMP.raycastTarget = false;
@@ -556,7 +556,7 @@ namespace CometaChampions.Runtime.UI
                 // Vibrant Gold badge for NEW CARD! (Rule 11)
                 bgImg.color = new Color(0.95f, 0.75f, 0.1f, 0.95f);
                 badgeTMP.color = new Color(0.05f, 0.05f, 0.05f);
-                badgeTMP.text = "✨ ¡NUEVA CARTA! ✨";
+                badgeTMP.text = "¡NUEVA CARTA!";
             }
             else
             {
@@ -588,20 +588,20 @@ namespace CometaChampions.Runtime.UI
                 int nextIndex = revealedCardsInCurrentPack + 1;
                 if (nextIndex < pack.Cards.Count)
                 {
-                    revealNextButtonText.text = $"DESCUBRIR CARTA ({nextIndex}/{pack.Cards.Count}) ✨";
+                    revealNextButtonText.text = $"DESCUBRIR CARTA ({nextIndex}/{pack.Cards.Count})";
                 }
                 else if (nextIndex == pack.Cards.Count)
                 {
-                    revealNextButtonText.text = $"DESCUBRIR ÚLTIMA CARTA ({nextIndex}/{pack.Cards.Count}) ✨";
+                    revealNextButtonText.text = $"DESCUBRIR ÚLTIMA CARTA ({nextIndex}/{pack.Cards.Count})";
                 }
                 else
                 {
-                    revealNextButtonText.text = "DESCUBRIR CARTA ✨";
+                    revealNextButtonText.text = "DESCUBRIR CARTA";
                 }
             }
             else
             {
-                revealNextButtonText.text = "DESCUBRIR CARTA ✨";
+                revealNextButtonText.text = "DESCUBRIR CARTA";
             }
         }
 
@@ -735,8 +735,8 @@ namespace CometaChampions.Runtime.UI
                 {
                     bool hasMorePacks = currentPackIndex + 1 < currentPacks.Count;
                     nextPackOrDoneButtonText.text = hasMorePacks
-                        ? $"ABRIR SIGUIENTE SOBRE ({currentPackIndex + 2}/{currentPacks.Count}) 📦"
-                        : "LISTO / VOLVER AL ÁLBUM ✔️";
+                        ? $"ABRIR SIGUIENTE SOBRE ({currentPackIndex + 2}/{currentPacks.Count})"
+                        : "LISTO / VOLVER AL ÁLBUM";
                 }
             }
         }
@@ -771,10 +771,10 @@ namespace CometaChampions.Runtime.UI
             if (summaryText != null)
             {
                 summaryText.text = $"<b>¡Apertura Completada!</b>\n\n" +
-                                   $"📦 Sobres Abiertos: <b>{currentPacks.Count}</b>\n" +
-                                   $"✨ Cartas Nuevas Desbloqueadas: <b>+{totalNew}</b>\n" +
-                                   $"🔁 Duplicadas para Mejoras: <b>+{totalDups}</b>\n" +
-                                   $"🎴 Total de Cartas Recibidas: <b>{totalCards}</b>";
+                                   $"• Sobres Abiertos: <b>{currentPacks.Count}</b>\n" +
+                                   $"• Cartas Nuevas Desbloqueadas: <b>+{totalNew}</b>\n" +
+                                   $"• Duplicadas para Mejoras: <b>+{totalDups}</b>\n" +
+                                   $"• Total de Cartas Recibidas: <b>{totalCards}</b>";
             }
 
             if (headerTitleText != null)
@@ -795,7 +795,7 @@ namespace CometaChampions.Runtime.UI
                 nextPackOrDoneButton.gameObject.SetActive(true);
                 if (nextPackOrDoneButtonText != null)
                 {
-                    nextPackOrDoneButtonText.text = "VOLVER AL ÁLBUM 🏠";
+                    nextPackOrDoneButtonText.text = "VOLVER AL ÁLBUM";
                 }
                 nextPackOrDoneButton.onClick.RemoveAllListeners();
                 nextPackOrDoneButton.onClick.AddListener(Hide);

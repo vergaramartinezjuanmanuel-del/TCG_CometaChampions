@@ -229,7 +229,7 @@ namespace CometaChampions.Runtime.UI
             pwrTMP.alignment = TextAlignmentOptions.Center;
             pwrTMP.color = Color.white;
 
-            // Remove button (Top-Right '✕')
+            // Remove button (Top-Right 'X')
             var remObj = new GameObject("RemoveBtn", typeof(RectTransform));
             remObj.transform.SetParent(slot.transform, false);
             var remRect = remObj.GetComponent<RectTransform>();
@@ -254,7 +254,7 @@ namespace CometaChampions.Runtime.UI
             remTextRect.offsetMax = Vector2.zero;
 
             var remTMP = remTextObj.AddComponent<TextMeshProUGUI>();
-            remTMP.text = "✕";
+            remTMP.text = "X";
             remTMP.fontSize = 14;
             remTMP.fontStyle = FontStyles.Bold;
             remTMP.alignment = TextAlignmentOptions.Center;

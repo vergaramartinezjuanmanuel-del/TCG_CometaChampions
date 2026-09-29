@@ -57,7 +57,7 @@ namespace CometaChampions.Runtime.UI
         {
             if (modalGoldText != null && Profile != null)
             {
-                modalGoldText.text = $"Tu Oro: <color=#FFD700>{Profile.GoldCoins:N0} 🪙</color>  |  Nivel: <color=#00E5FF>{Profile.AccountLevel}</color>";
+                modalGoldText.text = $"Tu Oro: <color=#FFD700>{Profile.GoldCoins:N0} ORO</color>  |  Nivel: <color=#00E5FF>{Profile.AccountLevel}</color>";
             }
         }
 
@@ -205,7 +205,7 @@ namespace CometaChampions.Runtime.UI
             }
             else
             {
-                reqTMP.text = $"<color=#FF5555>🔒 Requiere Nvl {avatar.RequiredLevel}</color>";
+                reqTMP.text = $"<color=#FF5555>Requiere Nvl {avatar.RequiredLevel}</color>";
             }
 
             // Action / Status Button
@@ -237,7 +237,7 @@ namespace CometaChampions.Runtime.UI
             if (isEquipped)
             {
                 btnImg.color = new Color(0.15f, 0.45f, 0.25f);
-                btnTMP.text = "★ EQUIPADO";
+                btnTMP.text = "EQUIPADO";
                 btnTMP.color = new Color(0.6f, 1f, 0.6f);
                 btn.interactable = false;
             }
@@ -255,7 +255,7 @@ namespace CometaChampions.Runtime.UI
                 if (canAfford)
                 {
                     btnImg.color = new Color(0.85f, 0.65f, 0.10f);
-                    btnTMP.text = $"COMPRAR 🪙 {avatar.GoldCost:N0}";
+                    btnTMP.text = $"COMPRAR {avatar.GoldCost:N0} ORO";
                     btnTMP.color = new Color(0.1f, 0.1f, 0.1f);
                     btn.interactable = true;
                     btn.onClick.AddListener(() => OnPurchaseClicked(avatar.Id));
@@ -263,7 +263,7 @@ namespace CometaChampions.Runtime.UI
                 else
                 {
                     btnImg.color = new Color(0.35f, 0.25f, 0.10f);
-                    btnTMP.text = $"🪙 {avatar.GoldCost:N0} (Falta Oro)";
+                    btnTMP.text = $"{avatar.GoldCost:N0} ORO (Falta Oro)";
                     btnTMP.color = new Color(0.8f, 0.5f, 0.5f);
                     btn.interactable = false;
                 }

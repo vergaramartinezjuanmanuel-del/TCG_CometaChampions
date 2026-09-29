@@ -91,31 +91,31 @@ namespace CometaChampions.Core.Models
             }
 
             // Build human-readable summary
-            var parts = new List<string> { $"+{result.GoldCoins} 🪙 Monedas" };
+            var parts = new List<string> { $"+{result.GoldCoins} Monedas" };
             if (result.AwardedCardIds.Count > 0)
             {
-                parts.Add($"+{result.AwardedCardIds.Count} 🎴 Cartas");
+                parts.Add($"+{result.AwardedCardIds.Count} Cartas");
             }
             if (result.EsenciaCometa > 0)
             {
-                parts.Add($"+{result.EsenciaCometa} ✨ Esencia");
+                parts.Add($"+{result.EsenciaCometa} Esencia");
             }
             if (result.BoosterPacks > 0)
             {
-                parts.Add($"+{result.BoosterPacks} 📦 Sobre");
+                parts.Add($"+{result.BoosterPacks} Sobre");
             }
             if (!string.IsNullOrEmpty(result.AwardedAvatarId))
             {
                 var avatarDef = AvatarCatalog.GetAvatarById(result.AwardedAvatarId);
-                parts.Add($"¡Avatar {avatarDef?.Name}! 👤");
+                parts.Add($"¡Avatar {avatarDef?.Name}!");
             }
             else if (result.AvatarConvertedToGold)
             {
-                parts.Add("(+300 🪙 Avatar Duplicado)");
+                parts.Add("(+300 Oro Avatar Duplicado)");
             }
             if (result.AccountXp > 0)
             {
-                parts.Add($"+{result.AccountXp} 🌟 XP");
+                parts.Add($"+{result.AccountXp} XP");
             }
 
             result.SummaryText = string.Join(" • ", parts);

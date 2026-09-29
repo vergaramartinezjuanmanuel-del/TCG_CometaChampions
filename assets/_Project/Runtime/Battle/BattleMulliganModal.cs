@@ -251,7 +251,7 @@ namespace CometaChampions.Runtime.Battle
             isAnimating = true;
             SetButtonsInteractable(false);
 
-            if (titleText != null) titleText.text = "✨ ¡NUEVAS CARTAS OBTENIDAS! ✨";
+            if (titleText != null) titleText.text = "¡NUEVAS CARTAS OBTENIDAS!";
             if (subtitleText != null)
             {
                 subtitleText.text = "Descubriendo las nuevas cartas de tu mano inicial...";
@@ -281,10 +281,10 @@ namespace CometaChampions.Runtime.Battle
             yield return new WaitForSeconds(totalSpinWait);
 
             // Update title and subtitle during the preview period
-            if (titleText != null) titleText.text = "🃏 ¡MANO INICIAL LISTA!";
+            if (titleText != null) titleText.text = "¡MANO INICIAL LISTA!";
             if (subtitleText != null)
             {
-                subtitleText.text = "<color=#30d158>★ ¡Cartas actualizadas!</color> Iniciando la partida...";
+                subtitleText.text = "<color=#30d158>¡Cartas actualizadas!</color> Iniciando la partida...";
             }
             if (confirmButtonText != null)
             {
@@ -337,7 +337,7 @@ namespace CometaChampions.Runtime.Battle
 
             if (cardNameTexts != null && slotIndex < cardNameTexts.Length && cardNameTexts[slotIndex] != null)
             {
-                cardNameTexts[slotIndex].text = $"✨ {newCard.Name}";
+                cardNameTexts[slotIndex].text = $"• {newCard.Name}";
             }
 
             if (cardCostTexts != null && slotIndex < cardCostTexts.Length && cardCostTexts[slotIndex] != null)

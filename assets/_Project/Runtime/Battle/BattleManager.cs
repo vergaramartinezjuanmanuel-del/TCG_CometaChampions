@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
@@ -26,10 +27,14 @@ namespace CometaChampions.Runtime.Battle
         [SerializeField] private BattleHelpModal helpModal;
         [SerializeField] private BattleMulliganModal mulliganModal;
 
+        [Header("Background")]
+        [SerializeField] private Image battleBackgroundImage;
+
         [Header("Settings")]
         [SerializeField] private bool autoStartOnAwake = true;
 
         public ArenaBattleMatchState MatchState { get; private set; }
+        public string CurrentArenaBackgroundName { get; private set; }
         private bool isResolvingTurn = false;
 
         private void Awake()
@@ -82,6 +87,9 @@ namespace CometaChampions.Runtime.Battle
             isResolvingTurn = false;
             var rng = new System.Random();
 
+            // 0. Arena Background: Randomly select one of the 6 official backgrounds
+            SetupRandomArenaBackground(rng);
+
             // 1. Arenas: 3 Arenas from MVP pool (Rule 15 & 24)
             var mvpArenas = MvpCardCatalog.GetMvpArenas();
             var selectedArenas = mvpArenas.OrderBy(_ => rng.Next()).Take(3).ToList();
@@ -112,7 +120,7 @@ namespace CometaChampions.Runtime.Battle
                 if (headerView != null)
                 {
                     headerView.SetEndTurnInteractable(false);
-                    headerView.SetStatusNotification("🃏 FASE DE MULLIGAN: Puedes cambiar cartas de tu mano inicial antes del Turno 1.", new Color(0.9f, 0.85f, 0.3f));
+                    headerView.SetStatusNotification("FASE DE MULLIGAN: Puedes cambiar cartas de tu mano inicial antes del Turno 1.", new Color(0.9f, 0.85f, 0.3f));
                 }
             }
             else
@@ -122,7 +130,7 @@ namespace CometaChampions.Runtime.Battle
                 if (headerView != null)
                 {
                     headerView.SetEndTurnInteractable(true);
-                    headerView.SetStatusNotification($"Turno 1: Tienes 🟢 {MatchState.PlayerEnergy} de energía. Toca una carta para jugar.", new Color(0.9f, 0.95f, 1f));
+                    headerView.SetStatusNotification($"Turno 1: Tienes {MatchState.PlayerEnergy} de energía. Toca una carta para jugar.", new Color(0.9f, 0.95f, 1f));
                 }
             }
 
@@ -140,7 +148,7 @@ namespace CometaChampions.Runtime.Battle
 
                 if (headerView != null)
                 {
-                    headerView.SetStatusNotification($"🃏 Mulligan: Revelando {toSwap.Count} carta(s) nuevas...", new Color(0.95f, 0.85f, 0.3f));
+                    headerView.SetStatusNotification($"Mulligan: Revelando {toSwap.Count} carta(s) nuevas...", new Color(0.95f, 0.85f, 0.3f));
                 }
 
                 // 2. Animate newly drawn cards with 3D spin flip effect, display them briefly, then finalize
@@ -168,11 +176,11 @@ namespace CometaChampions.Runtime.Battle
             {
                 if (swappedCount > 0)
                 {
-                    headerView.SetStatusNotification($"🃏 Mulligan: {swappedCount} carta(s) cambiadas. ¡Inicia el Turno 1!", new Color(0.35f, 0.95f, 0.45f));
+                    headerView.SetStatusNotification($"Mulligan: {swappedCount} carta(s) cambiadas. ¡Inicia el Turno 1!", new Color(0.35f, 0.95f, 0.45f));
                 }
                 else
                 {
-                    headerView.SetStatusNotification("🃏 Has conservado tu mano inicial. ¡Inicia el Turno 1!", new Color(0.35f, 0.95f, 0.45f));
+                    headerView.SetStatusNotification("Has conservado tu mano inicial. ¡Inicia el Turno 1!", new Color(0.35f, 0.95f, 0.45f));
                 }
 
                 headerView.SetEndTurnInteractable(true);
@@ -264,11 +272,11 @@ namespace CometaChampions.Runtime.Battle
 
                     if (MatchState.PlayerEnergy >= card.EnergyCost)
                     {
-                        headerView.SetStatusNotification($"👉 <b>{card.Name}</b> {typeBadge} (🟢 {card.EnergyCost} | ⚔️ {card.Power}) {abilityPreview}", new Color(0.35f, 0.95f, 0.45f));
+                        headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} (Costo: {card.EnergyCost} | Poder: {card.Power}) {abilityPreview}", new Color(0.35f, 0.95f, 0.45f));
                     }
                     else
                     {
-                        headerView.SetStatusNotification($"⚠️ <b>{card.Name}</b> {typeBadge} requiere 🟢 {card.EnergyCost} (Disponibles: 🟢 {MatchState.PlayerEnergy}) {abilityPreview}", new Color(1f, 0.65f, 0.25f));
+                        headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} requiere {card.EnergyCost} Energía (Disponibles: {MatchState.PlayerEnergy}) {abilityPreview}", new Color(1f, 0.65f, 0.25f));
                     }
                 }
             }
@@ -289,14 +297,14 @@ namespace CometaChampions.Runtime.Battle
                 {
                     if (headerView != null)
                     {
-                        headerView.SetStatusNotification($"⚠️ {error}", new Color(1f, 0.4f, 0.4f));
+                        headerView.SetStatusNotification($"{error}", new Color(1f, 0.4f, 0.4f));
                     }
                 }
                 else if (success)
                 {
                     if (headerView != null)
                     {
-                        headerView.SetStatusNotification($"⚔️ ¡<b>{card?.Name}</b> desplegada! Te quedan 🟢 {MatchState.PlayerEnergy}. Puedes jugar otra o finalizar turno.", new Color(0.35f, 0.95f, 0.45f));
+                        headerView.SetStatusNotification($"¡<b>{card?.Name}</b> desplegada! Te quedan {MatchState.PlayerEnergy} de energía. Puedes jugar otra o finalizar turno.", new Color(0.35f, 0.95f, 0.45f));
                     }
                 }
                 RefreshAllUI();
@@ -319,7 +327,7 @@ namespace CometaChampions.Runtime.Battle
             {
                 if (headerView != null)
                 {
-                    headerView.SetStatusNotification($"↩️ Carta recuperada a tu mano. Energía reembolsada (🟢 {MatchState.PlayerEnergy} disponible).", new Color(1f, 0.85f, 0.3f));
+                    headerView.SetStatusNotification($"Carta recuperada a tu mano. Energía reembolsada ({MatchState.PlayerEnergy} disponible).", new Color(1f, 0.85f, 0.3f));
                 }
                 RefreshAllUI();
             }
@@ -341,7 +349,7 @@ namespace CometaChampions.Runtime.Battle
             if (headerView != null)
             {
                 headerView.SetEndTurnInteractable(false);
-                headerView.SetStatusNotification("⚡ Paso 1: ¡Revelando jugadas del rival!", Color.yellow);
+                headerView.SetStatusNotification("Paso 1: ¡Revelando jugadas del rival!", Color.yellow);
             }
 
             // Step 1: Reveal opponent cards
@@ -358,7 +366,7 @@ namespace CometaChampions.Runtime.Battle
             // Step 2 & 3: Resolve abilities and triggers
             if (headerView != null)
             {
-                headerView.SetStatusNotification("✨ Pasos 2-5: ¡Resolviendo habilidades de combate!", Color.cyan);
+                headerView.SetStatusNotification("Pasos 2-5: ¡Resolviendo habilidades de combate!", Color.cyan);
             }
 
             ArenaBattleEngine.EndTurn(MatchState);
@@ -390,7 +398,7 @@ namespace CometaChampions.Runtime.Battle
                 if (headerView != null)
                 {
                     headerView.SetEndTurnInteractable(true);
-                    headerView.SetStatusNotification($"Turno {MatchState.CurrentTurn} de {MatchState.MaxTurn}: Tienes 🟢 {MatchState.PlayerEnergy} de energía.", new Color(0.9f, 0.95f, 1f));
+                    headerView.SetStatusNotification($"Turno {MatchState.CurrentTurn} de {MatchState.MaxTurn}: Tienes {MatchState.PlayerEnergy} de energía.", new Color(0.9f, 0.95f, 1f));
                 }
                 RefreshAllUI();
             }
@@ -452,6 +460,35 @@ namespace CometaChampions.Runtime.Battle
         private void HandleReturnHome()
         {
             SceneManager.LoadScene("Home");
+        }
+
+        /// <summary>
+        /// Randomly picks one of the 6 official arena backgrounds and displays it on the canvas background.
+        /// </summary>
+        public void SetupRandomArenaBackground(System.Random rng = null)
+        {
+            if (battleBackgroundImage == null)
+            {
+                var bgObj = GameObject.Find("Background");
+                if (bgObj != null)
+                {
+                    battleBackgroundImage = bgObj.GetComponent<Image>();
+                }
+            }
+
+            if (battleBackgroundImage != null)
+            {
+                string bgName = ArenaBackgroundProvider.GetRandomBackgroundName(rng);
+                var sprite = ArenaBackgroundProvider.GetBackgroundSprite(bgName);
+                if (sprite != null)
+                {
+                    battleBackgroundImage.sprite = sprite;
+                    battleBackgroundImage.color = Color.white;
+                    battleBackgroundImage.preserveAspect = false;
+                    CurrentArenaBackgroundName = bgName;
+                    Debug.Log($"<color=#30d158>[BattleManager] Arena background set to: {ArenaBackgroundProvider.GetDisplayName(bgName)} ({bgName})</color>");
+                }
+            }
         }
 
         public void RefreshAllUI()

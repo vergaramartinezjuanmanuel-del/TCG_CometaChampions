@@ -146,12 +146,12 @@ namespace CometaChampions.Runtime.UI
             // Balances
             if (goldBalanceText != null)
             {
-                goldBalanceText.text = $"🪙 {profile.GoldCoins:N0}";
+                goldBalanceText.text = $"{profile.GoldCoins:N0} ORO";
             }
 
             if (boosterPacksBalanceText != null)
             {
-                boosterPacksBalanceText.text = $"📦 {profile.BoosterPacks} Sobres Comprados (5 cartas)  •  🎁 {profile.RewardPacks} Sobres de Recompensa (3 cartas)";
+                boosterPacksBalanceText.text = $"{profile.BoosterPacks} Sobres Comprados (5 cartas)  •  {profile.RewardPacks} Sobres de Recompensa (3 cartas)";
             }
 
             // Saved booster section
@@ -166,7 +166,7 @@ namespace CometaChampions.Runtime.UI
                     openBoosterButton.gameObject.SetActive(hasPurchased);
                     if (hasPurchased && openBoosterButtonText != null)
                     {
-                        openBoosterButtonText.text = $"✨ ABRIR SOBRE COMPRADO ({profile.BoosterPacks} DISP. • 5 CARTAS)";
+                        openBoosterButtonText.text = $"ABRIR SOBRE COMPRADO ({profile.BoosterPacks} DISP. • 5 CARTAS)";
                     }
                 }
 
@@ -175,7 +175,7 @@ namespace CometaChampions.Runtime.UI
                     openRewardPackButton.gameObject.SetActive(hasReward);
                     if (hasReward && openRewardPackButtonText != null)
                     {
-                        openRewardPackButtonText.text = $"🎁 ABRIR SOBRE DE RECOMPENSA ({profile.RewardPacks} DISP. • 3 CARTAS)";
+                        openRewardPackButtonText.text = $"ABRIR SOBRE DE RECOMPENSA ({profile.RewardPacks} DISP. • 3 CARTAS)";
                     }
                 }
             }
@@ -189,7 +189,7 @@ namespace CometaChampions.Runtime.UI
             int customCost = customPackQuantity * PlayerProfile.PackGoldCost;
             if (buyCustomButtonText != null)
             {
-                buyCustomButtonText.text = $"COMPRAR {customPackQuantity} SOBRES ({customCost:N0} 🪙)";
+                buyCustomButtonText.text = $"COMPRAR {customPackQuantity} SOBRES ({customCost:N0} ORO)";
             }
 
             if (buy1PackButton != null)

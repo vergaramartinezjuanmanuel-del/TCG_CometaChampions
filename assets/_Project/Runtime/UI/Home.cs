@@ -23,6 +23,11 @@ namespace CometaChampions.Runtime.UI
     /// </summary>
     public class Home : MonoBehaviour
     {
+        [Header("Scene Background")]
+        [SerializeField] private Image homeBackgroundImage;
+        public Image HomeBackgroundImage => homeBackgroundImage;
+        public const string DefaultHomeBackground = ArenaBackgroundCatalog.Pedestal3DActive;
+
         [Header("3D Card Viewport & 360 Orbit")]
         [SerializeField] private Card3D card3D;
         [SerializeField] private Card3DViewer card3DViewer;
@@ -209,7 +214,7 @@ namespace CometaChampions.Runtime.UI
                 card3DViewer = centerObj.GetComponent<Card3DViewer>() ?? centerObj.AddComponent<Card3DViewer>();
             }
 
-            // 5. Ensure Showcase_Pedestal is stationary and unparented from rotating anchor
+            // 5. Ensure Showcase_Pedestal is stationary and unparented from rotating anchor, with mesh disabled so the painted pedestal artwork is shown
             var pedestal = GameObject.Find("Showcase_Pedestal");
             if (pedestal != null)
             {
@@ -219,6 +224,84 @@ namespace CometaChampions.Runtime.UI
                 }
                 pedestal.transform.position = new Vector3(0.18f, -1.95f, -4.5f);
                 pedestal.transform.localScale = new Vector3(3.8f, 0.07f, 3.8f);
+                var pedMr = pedestal.GetComponent<MeshRenderer>();
+                if (pedMr != null) pedMr.enabled = false;
+            }
+
+            // 6. Setup full-screen background (bg_pedestal_3d_active) on dedicated ScreenSpaceCamera Canvas
+            SetupBackground(DefaultHomeBackground);
+        }
+
+        /// <summary>
+        /// Configures the full-screen official background (default: bg_pedestal_3d_active)
+        /// using a dedicated ScreenSpaceCamera Canvas positioned behind the 3D inspectable card.
+        /// </summary>
+        public void SetupBackground(string backgroundName = ArenaBackgroundCatalog.Pedestal3DActive)
+        {
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.04f, 0.04f, 0.08f, 1f);
+            }
+
+            // 1. Locate or construct dedicated Background_Canvas
+            var bgCanvasObj = GameObject.Find("Background_Canvas");
+            if (bgCanvasObj == null)
+            {
+                bgCanvasObj = new GameObject("Background_Canvas");
+            }
+
+            var bgCanvas = bgCanvasObj.GetComponent<Canvas>() ?? bgCanvasObj.AddComponent<Canvas>();
+            bgCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            bgCanvas.worldCamera = cam;
+            bgCanvas.planeDistance = 25f; // Positioned behind 3D card (Z = -4.5, camera Z = -10 => dist = 5.5)
+            bgCanvas.sortingOrder = -100;
+
+            var bgScaler = bgCanvasObj.GetComponent<CanvasScaler>() ?? bgCanvasObj.AddComponent<CanvasScaler>();
+            bgScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            bgScaler.referenceResolution = new Vector2(1920, 1080);
+            bgScaler.matchWidthOrHeight = 0.5f;
+
+            // 2. Locate or construct Background_Image
+            Transform bgChild = bgCanvasObj.transform.Find("Background_Image") ?? bgCanvasObj.transform.Find("Background");
+            GameObject bgImgObj;
+            if (bgChild == null)
+            {
+                bgImgObj = new GameObject("Background_Image");
+                bgImgObj.transform.SetParent(bgCanvasObj.transform, false);
+            }
+            else
+            {
+                bgImgObj = bgChild.gameObject;
+            }
+
+            var rect = bgImgObj.GetComponent<RectTransform>() ?? bgImgObj.AddComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            homeBackgroundImage = bgImgObj.GetComponent<Image>() ?? bgImgObj.AddComponent<Image>();
+
+            var sprite = ArenaBackgroundProvider.GetBackgroundSprite(backgroundName)
+                         ?? Resources.Load<Sprite>("Backgrounds/" + backgroundName)
+                         ?? Resources.Load<Sprite>("Backgrounds/bg_pedestal_3d_active");
+            if (sprite != null)
+            {
+                homeBackgroundImage.sprite = sprite;
+            }
+            homeBackgroundImage.color = Color.white;
+            homeBackgroundImage.preserveAspect = false;
+            homeBackgroundImage.raycastTarget = false;
+            homeBackgroundImage.enabled = true;
+
+            // 3. Hide primitive cylinder Showcase_Pedestal if present so the high-res pedestal artwork is displayed
+            var pedObj = GameObject.Find("Showcase_Pedestal");
+            if (pedObj != null)
+            {
+                var pedMr = pedObj.GetComponent<MeshRenderer>();
+                if (pedMr != null) pedMr.enabled = false;
             }
         }
 
@@ -529,7 +612,7 @@ namespace CometaChampions.Runtime.UI
 
             if (deckButtonText != null)
             {
-                deckButtonText.text = $"🃏 MAZO ({count}/{DeckValidator.ArenaRequiredDeckSize})";
+                deckButtonText.text = $"MAZO ({count}/{DeckValidator.ArenaRequiredDeckSize})";
             }
 
             if (toggleDeckCardButton != null)
@@ -555,19 +638,19 @@ namespace CometaChampions.Runtime.UI
                         if (copiesInDeck == 0)
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = "➕ AÑADIR AL MAZO (0/2)";
+                                toggleDeckCardButtonText.text = "+ AÑADIR AL MAZO (0/2)";
                             toggleDeckCardButton.interactable = count < DeckValidator.ArenaRequiredDeckSize;
                         }
                         else if (copiesInDeck == 1)
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = count < DeckValidator.ArenaRequiredDeckSize ? "➕ AÑADIR COPIA (1/2)" : "➖ QUITAR COPIA (1/2)";
+                                toggleDeckCardButtonText.text = count < DeckValidator.ArenaRequiredDeckSize ? "+ AÑADIR COPIA (1/2)" : "- QUITAR COPIA (1/2)";
                             toggleDeckCardButton.interactable = true;
                         }
                         else
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = "➖ QUITAR DEL MAZO (2/2)";
+                                toggleDeckCardButtonText.text = "- QUITAR DEL MAZO (2/2)";
                             toggleDeckCardButton.interactable = true;
                         }
                     }
@@ -646,10 +729,10 @@ namespace CometaChampions.Runtime.UI
             var options = new List<string>
             {
                 "Todos los Clanes",
-                "Milenarios (🌳)",
-                "Fugitivos (⛓️)",
-                "Depredadores (🪓)",
-                "Míticos (🐉)"
+                "Milenarios",
+                "Fugitivos",
+                "Depredadores",
+                "Míticos"
             };
             clanFilterDropdown.AddOptions(options);
             clanFilterDropdown.onValueChanged.AddListener(OnClanFilterChanged);
@@ -775,7 +858,7 @@ namespace CometaChampions.Runtime.UI
             {
                 var targetClan = ClanAdvantage.GetAdvantageAgainst(card.Clan);
                 clanAdvantageText.text = targetClan != ClanType.None
-                    ? $"<color=#00FF88>★ Ventaja contra: {targetClan} (+1 Daño)</color>"
+                    ? $"<color=#00FF88>• Ventaja contra: {targetClan} (+1 Daño)</color>"
                     : string.Empty;
             }
 
@@ -839,7 +922,7 @@ namespace CometaChampions.Runtime.UI
             {
                 if (foilProgressLabel != null)
                 {
-                    foilProgressLabel.text = $"🔒 Carta bloqueada • Fabrícala con {craftCost} ✨ Esencia";
+                    foilProgressLabel.text = $"Carta bloqueada • Fabrícala con {craftCost} Esencia";
                 }
 
                 if (upgradeFoilButton != null)
@@ -862,7 +945,7 @@ namespace CometaChampions.Runtime.UI
 
                 if (craftCardButtonText != null)
                 {
-                    craftCardButtonText.text = $"✨ CRAFTEAR CARTA ({craftCost} ✨)";
+                    craftCardButtonText.text = $"+ CRAFTEAR CARTA ({craftCost} ESENCIA)";
                 }
             }
             else
@@ -904,7 +987,7 @@ namespace CometaChampions.Runtime.UI
 
                         if (craftCardButtonText != null)
                         {
-                            craftCardButtonText.text = $"✨ CREAR COPIA (+1 COPIA • {craftCost} ✨)";
+                            craftCardButtonText.text = $"+ CREAR COPIA (+1 COPIA • {craftCost} ESENCIA)";
                         }
                     }
                     else
@@ -986,7 +1069,7 @@ namespace CometaChampions.Runtime.UI
             if (esenciaDustText != null)
             {
                 int dust = Profile != null ? Profile.EsenciaCometa : 0;
-                esenciaDustText.text = $"✨ {dust:N0}";
+                esenciaDustText.text = dust.ToString("N0");
             }
             UpdateAccountLevelDisplay();
             UpdateModalBalance();
@@ -1205,7 +1288,7 @@ namespace CometaChampions.Runtime.UI
         {
             if (autoSpinButtonText != null && card3DViewer != null)
             {
-                autoSpinButtonText.text = card3DViewer.IsAutoSpinning ? "⏸️ Detener" : "💫 Auto-Giro";
+                autoSpinButtonText.text = card3DViewer.IsAutoSpinning ? "DETENER" : "AUTO-GIRO";
             }
         }
 

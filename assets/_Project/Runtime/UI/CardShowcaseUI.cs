@@ -257,19 +257,19 @@ namespace CometaChampions.Runtime.UI
             {
                 if (card.Category.Equals("champions", StringComparison.OrdinalIgnoreCase))
                 {
-                    cardStatsText.text = $"🪙 Costo: {card.Cost}   ⚔️ ATK: {card.Attack}   🛡️ DEF: {card.Defense}";
+                    cardStatsText.text = $"Costo: {card.Cost}   •   ATK: {card.Attack}   •   DEF: {card.Defense}";
                 }
                 else if (card.Category.Equals("kombat", StringComparison.OrdinalIgnoreCase))
                 {
-                    cardStatsText.text = $"⚡ Tipo: {card.CardType}   ⚔️ ATK: +{card.Attack}";
+                    cardStatsText.text = $"Tipo: {card.CardType}   •   ATK: +{card.Attack}";
                 }
                 else if (card.Category.Equals("trompos", StringComparison.OrdinalIgnoreCase))
                 {
-                    cardStatsText.text = $"🌀 Línea: {card.CardType}   🛡️ DEF: {card.Defense}";
+                    cardStatsText.text = $"Línea: {card.CardType}   •   DEF: {card.Defense}";
                 }
                 else
                 {
-                    cardStatsText.text = $"🏟️ {card.CardType}";
+                    cardStatsText.text = $"{card.CardType}";
                 }
             }
 
@@ -319,7 +319,7 @@ namespace CometaChampions.Runtime.UI
         {
             if (autoSpinButtonText != null && cardViewer != null)
             {
-                autoSpinButtonText.text = cardViewer.IsAutoSpinning ? "⏸️ Detener Giro" : "💫 Auto-Giro";
+                autoSpinButtonText.text = cardViewer.IsAutoSpinning ? "Detener Giro" : "Auto-Giro";
             }
         }
 

@@ -38,6 +38,8 @@ namespace CometaChampions.Runtime.Battle
                 cardButton.onClick.AddListener(() => onClickCallback?.Invoke(HandIndex));
             }
 
+            ApplyRoundedCardStyle();
+
             // Ensure child graphics do not block clicks intended for the Button
             var rootGraphic = GetComponent<Graphic>();
             foreach (var g in GetComponentsInChildren<Graphic>(true))
@@ -45,6 +47,67 @@ namespace CometaChampions.Runtime.Battle
                 if (g != rootGraphic)
                 {
                     g.raycastTarget = false;
+                }
+            }
+        }
+
+        private void ApplyRoundedCardStyle()
+        {
+            var maskSprite = Resources.Load<Sprite>("UI/rounded_card_mask");
+            var borderSprite = Resources.Load<Sprite>("UI/rounded_card_border");
+
+            var rootImg = GetComponent<Image>();
+            if (rootImg != null && maskSprite != null)
+            {
+                rootImg.sprite = maskSprite;
+                rootImg.type = Image.Type.Sliced;
+                rootImg.color = new Color(0.10f, 0.13f, 0.19f, 1f);
+            }
+
+            var mask = GetComponent<Mask>();
+            if (mask == null)
+            {
+                mask = gameObject.AddComponent<Mask>();
+                mask.showMaskGraphic = true;
+            }
+
+            // Normal border
+            var borderTrans = transform.Find("Border");
+            Image borderImg = null;
+            if (borderTrans != null)
+            {
+                borderImg = borderTrans.GetComponent<Image>();
+            }
+            else if (borderSprite != null)
+            {
+                var borderObj = new GameObject("Border");
+                borderObj.transform.SetParent(transform, false);
+                var bRect = borderObj.AddComponent<RectTransform>();
+                bRect.anchorMin = Vector2.zero;
+                bRect.anchorMax = Vector2.one;
+                bRect.offsetMin = Vector2.zero;
+                bRect.offsetMax = Vector2.zero;
+                borderImg = borderObj.AddComponent<Image>();
+                borderImg.raycastTarget = false;
+            }
+
+            if (borderImg != null && borderSprite != null)
+            {
+                borderImg.sprite = borderSprite;
+                borderImg.type = Image.Type.Sliced;
+                borderImg.color = new Color(0.35f, 0.45f, 0.65f, 0.8f);
+                borderImg.transform.SetAsLastSibling();
+            }
+
+            // Selected border
+            if (selectedBorder != null && borderSprite != null)
+            {
+                var selImg = selectedBorder.GetComponent<Image>();
+                if (selImg != null)
+                {
+                    selImg.sprite = borderSprite;
+                    selImg.type = Image.Type.Sliced;
+                    selImg.color = new Color(0.16f, 0.85f, 0.95f, 1f); // Vibrant cyan glow
                 }
             }
         }

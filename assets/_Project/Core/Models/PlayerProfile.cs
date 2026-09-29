@@ -288,7 +288,7 @@ namespace CometaChampions.Core.Models
 
             if (GoldCoins < def.GoldCost)
             {
-                failureReason = $"Monedas de oro insuficientes. Requiere {def.GoldCost:N0} 🪙.";
+                failureReason = $"Monedas de oro insuficientes. Requiere {def.GoldCost:N0} Oro.";
                 return false;
             }
 
@@ -403,7 +403,7 @@ namespace CometaChampions.Core.Models
             int cost = CardCraftingConfig.GetCraftCost(card.Rarity);
             if (EsenciaCometa < cost)
             {
-                failureReason = $"Esencia insuficiente ({EsenciaCometa}/{cost} ✨).";
+                failureReason = $"Esencia insuficiente ({EsenciaCometa}/{cost} Esencia).";
                 return false;
             }
 
@@ -474,7 +474,7 @@ namespace CometaChampions.Core.Models
             int totalCost = packCount * PackGoldCost;
             if (GoldCoins < totalCost)
             {
-                failureReason = $"Monedas insuficientes. Requiere {totalCost:N0} 🪙 (Tienes: {GoldCoins:N0} 🪙).";
+                failureReason = $"Monedas insuficientes. Requiere {totalCost:N0} Oro (Tienes: {GoldCoins:N0} Oro).";
                 return false;
             }
 

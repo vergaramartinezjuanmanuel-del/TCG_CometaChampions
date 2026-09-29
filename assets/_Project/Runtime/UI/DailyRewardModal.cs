@@ -177,7 +177,7 @@ namespace CometaChampions.Runtime.UI
                     if (btnImg != null) btnImg.color = new Color(0.25f, 0.25f, 0.32f);
                     if (claimButtonText != null)
                     {
-                        claimButtonText.text = "✓ RECLAMADO HOY";
+                        claimButtonText.text = "RECLAMADO HOY";
                         claimButtonText.color = new Color(0.65f, 0.65f, 0.70f);
                     }
                 }
@@ -235,7 +235,7 @@ namespace CometaChampions.Runtime.UI
                 bImg.raycastTarget = false;
             }
 
-            // Header Day Label ("DÍA 1", "DÍA 7 ★ MEGA")
+            // Header Day Label ("DÍA 1", "DÍA 7 MEGA")
             var dayLabelObj = new GameObject("DayLabel");
             dayLabelObj.transform.SetParent(cardObj.transform, false);
             var dlRect = dayLabelObj.AddComponent<RectTransform>();
@@ -246,7 +246,7 @@ namespace CometaChampions.Runtime.UI
             dlRect.sizeDelta = new Vector2(110, 22);
 
             var dlTMP = dayLabelObj.AddComponent<TextMeshProUGUI>();
-            dlTMP.text = pack.DayIndex == 7 ? "★ DÍA 7 ★" : $"DÍA {pack.DayIndex}";
+            dlTMP.text = pack.DayIndex == 7 ? "DÍA 7 MEGA" : $"DÍA {pack.DayIndex}";
             dlTMP.fontSize = 13;
             dlTMP.fontStyle = FontStyles.Bold;
             dlTMP.alignment = TextAlignmentOptions.Center;
@@ -275,8 +275,15 @@ namespace CometaChampions.Runtime.UI
             itRect.sizeDelta = Vector2.zero;
 
             var itTMP = iconTextObj.AddComponent<TextMeshProUGUI>();
-            itTMP.text = pack.HasAvatarReward ? "👤" : (pack.BoosterPacks > 0 ? "📦" : (pack.CardCount > 1 ? "🎴🎴" : "🪙"));
-            itTMP.fontSize = 32;
+            itTMP.text = pack.HasAvatarReward
+                ? "<color=#00E5FF>AVATAR</color>"
+                : (pack.BoosterPacks > 0
+                    ? "<color=#FFD700>SOBRE</color>"
+                    : (pack.CardCount > 1
+                        ? $"<color=#00FF88>x{pack.CardCount}\nCARTAS</color>"
+                        : $"<color=#FFD700>+{pack.GoldCoins}\nORO</color>"));
+            itTMP.fontSize = 14;
+            itTMP.fontStyle = FontStyles.Bold;
             itTMP.alignment = TextAlignmentOptions.Center;
 
             // Reward Details List
@@ -293,11 +300,11 @@ namespace CometaChampions.Runtime.UI
             rwTMP.fontSize = 11;
             rwTMP.alignment = TextAlignmentOptions.Center;
 
-            var rewardLines = new List<string> { $"<color=#FFD700>+{pack.GoldCoins} 🪙</color>" };
-            if (pack.CardCount > 0) rewardLines.Add($"+{pack.CardCount} Carta{(pack.CardCount > 1 ? "s" : "")} 🎴");
-            if (pack.EsenciaCometa > 0) rewardLines.Add($"+{pack.EsenciaCometa} ✨");
-            if (pack.BoosterPacks > 0) rewardLines.Add($"+{pack.BoosterPacks} Sobre 📦");
-            if (pack.HasAvatarReward) rewardLines.Add("<color=#00E5FF>¡Avatar! 👤</color>");
+            var rewardLines = new List<string> { $"<color=#FFD700>+{pack.GoldCoins} Oro</color>" };
+            if (pack.CardCount > 0) rewardLines.Add($"+{pack.CardCount} Carta{(pack.CardCount > 1 ? "s" : "")}");
+            if (pack.EsenciaCometa > 0) rewardLines.Add($"+{pack.EsenciaCometa} Esencia");
+            if (pack.BoosterPacks > 0) rewardLines.Add($"+{pack.BoosterPacks} Sobre");
+            if (pack.HasAvatarReward) rewardLines.Add("<color=#00E5FF>¡Avatar!</color>");
 
             rwTMP.text = string.Join("\n", rewardLines);
 
@@ -328,7 +335,7 @@ namespace CometaChampions.Runtime.UI
             if (isPast)
             {
                 bdImg.color = new Color(0.12f, 0.45f, 0.20f, 0.95f);
-                bdTMP.text = "✓ RECLAMADO";
+                bdTMP.text = "RECLAMADO";
                 bdTMP.color = new Color(0.7f, 1f, 0.7f);
             }
             else if (isCurrent && canClaimToday)
@@ -346,7 +353,7 @@ namespace CometaChampions.Runtime.UI
             else
             {
                 bdImg.color = new Color(0.18f, 0.19f, 0.25f, 0.85f);
-                bdTMP.text = "🔒 BLOQUEADO";
+                bdTMP.text = "BLOQUEADO";
                 bdTMP.color = new Color(0.55f, 0.55f, 0.60f);
             }
 
@@ -392,7 +399,7 @@ namespace CometaChampions.Runtime.UI
 
                 if (tomorrowBadgeTMP != null)
                 {
-                    tomorrowBadgeTMP.text = $"⏰ {timeFormatted}";
+                    tomorrowBadgeTMP.text = timeFormatted;
                 }
             }
         }
@@ -472,35 +479,35 @@ namespace CometaChampions.Runtime.UI
             }
             else if (result.AvatarConvertedToGold)
             {
-                var bonusObj = CreateRevealResourceItem("🪙", "+300 Oro (Avatar Duplicado)", "Compensación", revealItemsContainer);
+                var bonusObj = CreateRevealResourceItem("<color=#FFD700>ORO</color>", "+300 Oro (Avatar Duplicado)", "Compensación", revealItemsContainer);
                 spawnedRevealItems.Add(bonusObj);
             }
 
             // 3. Gold Coins
             if (result.GoldCoins > 0)
             {
-                var goldObj = CreateRevealResourceItem("🪙", $"+{result.GoldCoins:N0} Monedas", "Oro para mejoras", revealItemsContainer);
+                var goldObj = CreateRevealResourceItem("<color=#FFD700>ORO</color>", $"+{result.GoldCoins:N0} Monedas", "Oro para mejoras", revealItemsContainer);
                 spawnedRevealItems.Add(goldObj);
             }
 
             // 4. Esencia Cometa
             if (result.EsenciaCometa > 0)
             {
-                var dustObj = CreateRevealResourceItem("✨", $"+{result.EsenciaCometa} Esencia", "Polvo de crafteo", revealItemsContainer);
+                var dustObj = CreateRevealResourceItem("<color=#00E5FF>ESENCIA</color>", $"+{result.EsenciaCometa} Esencia", "Polvo de crafteo", revealItemsContainer);
                 spawnedRevealItems.Add(dustObj);
             }
 
             // 5. Booster Packs
             if (result.BoosterPacks > 0)
             {
-                var packObj = CreateRevealResourceItem("📦", $"+{result.BoosterPacks} Sobre", "Pack de refuerzo", revealItemsContainer);
+                var packObj = CreateRevealResourceItem("<color=#FF9F0A>SOBRE</color>", $"+{result.BoosterPacks} Sobre", "Pack de refuerzo", revealItemsContainer);
                 spawnedRevealItems.Add(packObj);
             }
 
             // 6. Account XP
             if (result.AccountXp > 0)
             {
-                var xpObj = CreateRevealResourceItem("🌟", $"+{result.AccountXp} XP", "Progreso de cuenta", revealItemsContainer);
+                var xpObj = CreateRevealResourceItem("<color=#30D158>XP</color>", $"+{result.AccountXp} XP", "Progreso de cuenta", revealItemsContainer);
                 spawnedRevealItems.Add(xpObj);
             }
         }
@@ -631,7 +638,8 @@ namespace CometaChampions.Runtime.UI
 
             var iTMP = iconObj.AddComponent<TextMeshProUGUI>();
             iTMP.text = icon;
-            iTMP.fontSize = 42;
+            iTMP.fontSize = 16;
+            iTMP.fontStyle = FontStyles.Bold;
             iTMP.alignment = TextAlignmentOptions.Center;
 
             var textObj = new GameObject("Text");

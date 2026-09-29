@@ -78,7 +78,7 @@ namespace CometaChampions.Core.Models
                 ["milenarios"] = new ShowcaseClanData {
                     Id = "milenarios",
                     Name = "Milenarios",
-                    Symbol = "🌳",
+                    Symbol = "•",
                     ColorHex = "#30d158",
                     AccentColorHex = "#248a3d",
                     BgGradient = "from-emerald-950 via-teal-900 to-black",
@@ -87,12 +87,12 @@ namespace CometaChampions.Core.Models
                     Beats = "fugitivos",
                     BeatenBy = "miticos",
                     Description = "Guardianes ancestrales de la naturaleza y de la tradición milenaria de los trompos. Su estilo combina resistencia sólida y sabiduría defensiva.",
-                    Bonus = "+1 Daño contra Fugitivos (⛓️)"
+                    Bonus = "+1 Daño contra Fugitivos"
                 },
                 ["fugitivos"] = new ShowcaseClanData {
                     Id = "fugitivos",
                     Name = "Fugitivos",
-                    Symbol = "⛓️",
+                    Symbol = "•",
                     ColorHex = "#ff9f0a",
                     AccentColorHex = "#c97800",
                     BgGradient = "from-amber-950 via-orange-950 to-black",
@@ -101,12 +101,12 @@ namespace CometaChampions.Core.Models
                     Beats = "depredadores",
                     BeatenBy = "milenarios",
                     Description = "Rebeldes indomables de las calles y los suburbios industriales. Destacan por su astucia impredecible, trampas y contragolpes letales.",
-                    Bonus = "+1 Daño contra Depredadores (🪓)"
+                    Bonus = "+1 Daño contra Depredadores"
                 },
                 ["depredadores"] = new ShowcaseClanData {
                     Id = "depredadores",
                     Name = "Depredadores",
-                    Symbol = "🪓",
+                    Symbol = "•",
                     ColorHex = "#ff453a",
                     AccentColorHex = "#d70015",
                     BgGradient = "from-red-950 via-orange-950 to-black",
@@ -115,12 +115,12 @@ namespace CometaChampions.Core.Models
                     Beats = "miticos",
                     BeatenBy = "fugitivos",
                     Description = "Cazadores feroces de instinto puro. Su filosofía es el ataque implacable y el poder demoledor que arrasa cualquier defensa.",
-                    Bonus = "+1 Daño contra Míticos (🐉)"
+                    Bonus = "+1 Daño contra Míticos"
                 },
                 ["miticos"] = new ShowcaseClanData {
                     Id = "miticos",
                     Name = "Míticos",
-                    Symbol = "🐉",
+                    Symbol = "•",
                     ColorHex = "#bf5af2",
                     AccentColorHex = "#8619b8",
                     BgGradient = "from-purple-950 via-indigo-950 to-black",
@@ -129,12 +129,12 @@ namespace CometaChampions.Core.Models
                     Beats = "milenarios",
                     BeatenBy = "depredadores",
                     Description = "Maestros del Cristal Cometa y portadores de magia ancestral. Manipulan la energía cósmica y los cielos con poderes trascendentes.",
-                    Bonus = "+1 Daño contra Milenarios (🌳)"
+                    Bonus = "+1 Daño contra Milenarios"
                 },
                 ["neutral"] = new ShowcaseClanData {
                     Id = "neutral",
                     Name = "Neutral",
-                    Symbol = "⭐",
+                    Symbol = "•",
                     ColorHex = "#f5c518",
                     AccentColorHex = "#b37b00",
                     BgGradient = "from-amber-950 via-yellow-950 to-black",

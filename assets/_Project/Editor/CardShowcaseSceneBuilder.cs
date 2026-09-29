@@ -120,7 +120,7 @@ namespace CometaChampions.Editor
             headerRect.anchoredPosition = Vector2.zero;
             headerRect.sizeDelta = new Vector2(0, 80);
 
-            var backBtn = CreateButton("BackButton", headerObj.transform, "◀ VOLVER", new Vector2(90, -40), new Vector2(140, 50));
+            var backBtn = CreateButton("BackButton", headerObj.transform, "< VOLVER", new Vector2(90, -40), new Vector2(140, 50));
             backBtn.GetComponent<Image>().color = new Color(0.2f, 0.23f, 0.32f);
             uiSo.FindProperty("backButton").objectReferenceValue = backBtn;
 
@@ -163,7 +163,7 @@ namespace CometaChampions.Editor
             uiSo.FindProperty("catArenasButton").objectReferenceValue = catArenas;
 
             // Hint Text for 3D Orbit
-            var hintTMP = CreateTMPText("HintText", canvasObj.transform, "🖱️ Arrastra con el ratón / touch para rotar en 360° libremente", new Vector2(-280, 140), new Vector2(650, 30), 18, TextAlignmentOptions.Center);
+            var hintTMP = CreateTMPText("HintText", canvasObj.transform, "Arrastra con el ratón / touch para rotar en 360° libremente", new Vector2(-280, 140), new Vector2(650, 30), 18, TextAlignmentOptions.Center);
             hintTMP.color = new Color(0.7f, 0.75f, 0.85f, 0.8f);
             var hintRect = hintTMP.GetComponent<RectTransform>();
             hintRect.anchorMin = new Vector2(0.5f, 0);
@@ -194,12 +194,12 @@ namespace CometaChampions.Editor
             catBadge.color = new Color(0.4f, 0.85f, 1f);
             uiSo.FindProperty("cardCategoryBadgeText").objectReferenceValue = catBadge;
 
-            var clanBadge = CreateTMPText("Detail_ClanBadge", rightPanel.transform, "🪓 Depredadores", new Vector2(230, -68), new Vector2(220, 28), 18, TextAlignmentOptions.Left);
+            var clanBadge = CreateTMPText("Detail_ClanBadge", rightPanel.transform, "• Depredadores", new Vector2(230, -68), new Vector2(220, 28), 18, TextAlignmentOptions.Left);
             clanBadge.fontStyle = FontStyles.Bold;
             uiSo.FindProperty("cardClanBadgeText").objectReferenceValue = clanBadge;
 
             // Stats Chip
-            var statsChip = CreateTMPText("Detail_StatsChip", rightPanel.transform, "🪙 Costo: 2   ⚔️ ATK: 3   🛡️ DEF: 1", new Vector2(25, -108), new Vector2(430, 36), 19, TextAlignmentOptions.Left);
+            var statsChip = CreateTMPText("Detail_StatsChip", rightPanel.transform, "Costo: 2   •   ATK: 3   •   DEF: 1", new Vector2(25, -108), new Vector2(430, 36), 19, TextAlignmentOptions.Left);
             statsChip.color = new Color(1f, 0.85f, 0.3f);
             statsChip.fontStyle = FontStyles.Bold;
             uiSo.FindProperty("cardStatsText").objectReferenceValue = statsChip;
@@ -257,9 +257,9 @@ namespace CometaChampions.Editor
             rrLayout.childControlWidth = false;
             rrLayout.childControlHeight = true;
 
-            var revOro = CreateButton("Rev_Oro", revRow.transform, "👑 Oro", Vector2.zero, new Vector2(135, 40));
-            var revColor = CreateButton("Rev_Color", revRow.transform, "🎨 Color", Vector2.zero, new Vector2(135, 40));
-            var revBi = CreateButton("Rev_Bi", revRow.transform, "☯️ Bicolor", Vector2.zero, new Vector2(135, 40));
+            var revOro = CreateButton("Rev_Oro", revRow.transform, "ORO", Vector2.zero, new Vector2(135, 40));
+            var revColor = CreateButton("Rev_Color", revRow.transform, "COLOR", Vector2.zero, new Vector2(135, 40));
+            var revBi = CreateButton("Rev_Bi", revRow.transform, "BICOLOR", Vector2.zero, new Vector2(135, 40));
 
             uiSo.FindProperty("reversoOroButton").objectReferenceValue = revOro;
             uiSo.FindProperty("reversoColorButton").objectReferenceValue = revColor;
@@ -305,14 +305,14 @@ namespace CometaChampions.Editor
             bbLayout.childControlWidth = false;
             bbLayout.childControlHeight = true;
 
-            var prevBtn = CreateButton("PrevButton", bottomBar.transform, "◀ ANTERIOR", Vector2.zero, new Vector2(140, 52));
+            var prevBtn = CreateButton("PrevButton", bottomBar.transform, "< ANTERIOR", Vector2.zero, new Vector2(140, 52));
             var counterTMP = CreateTMPText("CounterText", bottomBar.transform, "1 / 80", Vector2.zero, new Vector2(90, 52), 20, TextAlignmentOptions.Center);
             counterTMP.fontStyle = FontStyles.Bold;
-            var nextBtn = CreateButton("NextButton", bottomBar.transform, "SIGUIENTE ▶", Vector2.zero, new Vector2(140, 52));
-            var randBtn = CreateButton("RandomButton", bottomBar.transform, "🎲 AZAR", Vector2.zero, new Vector2(110, 52));
-            var flipBtn = CreateButton("FlipButton", bottomBar.transform, "🔄 VOLTEAR", Vector2.zero, new Vector2(130, 52));
-            var spinBtn = CreateButton("SpinButton", bottomBar.transform, "💫 AUTO-GIRO", Vector2.zero, new Vector2(145, 52));
-            var frontBtn = CreateButton("FrontButton", bottomBar.transform, "🎯 FRENTE", Vector2.zero, new Vector2(110, 52));
+            var nextBtn = CreateButton("NextButton", bottomBar.transform, "SIGUIENTE >", Vector2.zero, new Vector2(140, 52));
+            var randBtn = CreateButton("RandomButton", bottomBar.transform, "AZAR", Vector2.zero, new Vector2(110, 52));
+            var flipBtn = CreateButton("FlipButton", bottomBar.transform, "VOLTEAR", Vector2.zero, new Vector2(130, 52));
+            var spinBtn = CreateButton("SpinButton", bottomBar.transform, "AUTO-GIRO", Vector2.zero, new Vector2(145, 52));
+            var frontBtn = CreateButton("FrontButton", bottomBar.transform, "FRENTE", Vector2.zero, new Vector2(110, 52));
 
             flipBtn.GetComponent<Image>().color = new Color(0.2f, 0.45f, 0.7f);
             spinBtn.GetComponent<Image>().color = new Color(0.5f, 0.25f, 0.7f);

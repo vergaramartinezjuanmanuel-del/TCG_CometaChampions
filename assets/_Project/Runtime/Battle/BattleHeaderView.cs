@@ -50,7 +50,7 @@ namespace CometaChampions.Runtime.Battle
 
             if (energyText != null)
             {
-                energyText.text = $"🟢 <color=#30d158><b>{playerEnergy}</b></color> / {playerMaxEnergy}";
+                energyText.text = $"ENERGÍA <color=#30d158><b>{playerEnergy}</b></color> / {playerMaxEnergy}";
             }
 
             if (scoreText != null)

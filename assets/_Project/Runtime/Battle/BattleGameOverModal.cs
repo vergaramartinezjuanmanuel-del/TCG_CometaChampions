@@ -67,16 +67,16 @@ namespace CometaChampions.Runtime.Battle
                 switch (state.Winner)
                 {
                     case BattleWinner.Player:
-                        titleText.text = "🏆 ¡VICTORIA ABSOLUTA!";
+                        titleText.text = "¡VICTORIA ABSOLUTA!";
                         titleText.color = new Color(0.2f, 0.85f, 0.35f, 1f); // Vibrant green
                         break;
                     case BattleWinner.Ai:
-                        titleText.text = "💀 DERROTA";
+                        titleText.text = "DERROTA";
                         titleText.color = new Color(1f, 0.28f, 0.24f, 1f); // Vibrant red
                         break;
                     case BattleWinner.Tie:
                     default:
-                        titleText.text = "🤝 EMPATE HEROICO";
+                        titleText.text = "EMPATE HEROICO";
                         titleText.color = new Color(0.96f, 0.77f, 0.19f, 1f); // Vibrant gold
                         break;
                 }
@@ -101,17 +101,17 @@ namespace CometaChampions.Runtime.Battle
 
             if (playerStatsText != null)
             {
-                playerStatsText.text = $"<size=38><b>{state.PlayerLanesWon}</b></size>\n<color=#8e8e93>Tus Arenas ({state.PlayerTotalPower} ⚔️)</color>";
+                playerStatsText.text = $"<size=38><b>{state.PlayerLanesWon}</b></size>\n<color=#8e8e93>Tus Arenas ({state.PlayerTotalPower} Poder)</color>";
             }
 
             if (aiStatsText != null)
             {
-                aiStatsText.text = $"<size=38><b>{state.AiLanesWon}</b></size>\n<color=#8e8e93>Arenas Rival ({state.AiTotalPower} ⚔️)</color>";
+                aiStatsText.text = $"<size=38><b>{state.AiLanesWon}</b></size>\n<color=#8e8e93>Arenas Rival ({state.AiTotalPower} Poder)</color>";
             }
 
             if (rewardsText != null)
             {
-                rewardsText.text = $"Recompensas:  <color=#f5c518>+{goldEarned} 🪙 Oro</color>   •   <color=#30d158>+{xpEarned} 🌟 XP</color>";
+                rewardsText.text = $"Recompensas:  <color=#f5c518>+{goldEarned} Oro</color>   •   <color=#30d158>+{xpEarned} XP</color>";
             }
 
             if (modalRoot != null)

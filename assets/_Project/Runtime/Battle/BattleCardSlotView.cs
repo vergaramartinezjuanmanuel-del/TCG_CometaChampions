@@ -98,7 +98,7 @@ namespace CometaChampions.Runtime.Battle
                     powerBadgeRoot.SetActive(true);
                     if (powerBadgeText != null)
                     {
-                        powerBadgeText.text = "❓";
+                        powerBadgeText.text = "?";
                     }
                 }
 

@@ -203,7 +203,7 @@ namespace CometaChampions.Core.Rules
 
             if (state.PlayerEnergy < card.EnergyCost)
             {
-                error = $"No tienes suficiente energía (🟢 {state.PlayerEnergy} disponible, requiere 🟢 {card.EnergyCost}).";
+                error = $"No tienes suficiente energía ({state.PlayerEnergy} disponible, requiere {card.EnergyCost}).";
                 return false;
             }
 
@@ -293,7 +293,7 @@ namespace CometaChampions.Core.Rules
                     if (!aiCard.IsRevealed)
                     {
                         aiCard.IsRevealed = true;
-                        state.ResolutionLog.Add($"👁️ Rival reveló {aiCard.Card.Name} en {state.Arenas[l]?.Name ?? $"Arena {l + 1}"}.");
+                        state.ResolutionLog.Add($"• Rival reveló {aiCard.Card.Name} en {state.Arenas[l]?.Name ?? $"Arena {l + 1}"}.");
                     }
                 }
             }
@@ -367,7 +367,7 @@ namespace CometaChampions.Core.Rules
                         if (otherAlly != null)
                         {
                             otherAlly.ApplyPowerModifier(ability.Value);
-                            state.ResolutionLog.Add($"✨ {instance.Card.Name} otorgó +{ability.Value} Poder a {otherAlly.Card.Name}.");
+                            state.ResolutionLog.Add($"• {instance.Card.Name} otorgó +{ability.Value} Poder a {otherAlly.Card.Name}.");
                         }
                         break;
 
@@ -376,7 +376,7 @@ namespace CometaChampions.Core.Rules
                         if (targetEnemy != null)
                         {
                             targetEnemy.ApplyPowerModifier(-ability.Value);
-                            state.ResolutionLog.Add($"⚡ {instance.Card.Name} redujo en -{ability.Value} Poder a {targetEnemy.Card.Name}.");
+                            state.ResolutionLog.Add($"• {instance.Card.Name} redujo en -{ability.Value} Poder a {targetEnemy.Card.Name}.");
                         }
                         break;
 
@@ -392,7 +392,7 @@ namespace CometaChampions.Core.Rules
                         }
                         if (countBuffed > 0)
                         {
-                            state.ResolutionLog.Add($"✨ {instance.Card.Name} otorgó +{ability.Value} Poder a {countBuffed} aliados en su arena.");
+                            state.ResolutionLog.Add($"• {instance.Card.Name} otorgó +{ability.Value} Poder a {countBuffed} aliados en su arena.");
                         }
                         break;
 
@@ -405,7 +405,7 @@ namespace CometaChampions.Core.Rules
                             friendlyCards.Remove(instance);
                             instance.LaneIndex = targetLane;
                             targetList.Add(instance);
-                            state.ResolutionLog.Add($"💨 {instance.Card.Name} se movió a {state.Arenas[targetLane]?.Name ?? $"Arena {targetLane + 1}"}.");
+                            state.ResolutionLog.Add($"• {instance.Card.Name} se movió a {state.Arenas[targetLane]?.Name ?? $"Arena {targetLane + 1}"}.");
                         }
                         break;
 
@@ -420,7 +420,7 @@ namespace CometaChampions.Core.Rules
                                 friendlyCards.Remove(allyToMove);
                                 allyToMove.LaneIndex = destLane;
                                 destList.Add(allyToMove);
-                                state.ResolutionLog.Add($"🌪️ {instance.Card.Name} movió a {allyToMove.Card.Name} a {state.Arenas[destLane]?.Name ?? $"Arena {destLane + 1}"}.");
+                                state.ResolutionLog.Add($"• {instance.Card.Name} movió a {allyToMove.Card.Name} a {state.Arenas[destLane]?.Name ?? $"Arena {destLane + 1}"}.");
                             }
                         }
                         break;
@@ -446,7 +446,7 @@ namespace CometaChampions.Core.Rules
                         card.Card.Id == "BEAST_FENIX" && pPower > aiPower)
                     {
                         card.ApplyPowerModifier(card.Card.Ability.Value);
-                        state.ResolutionLog.Add($"🔥 {card.Card.Name} se fortaleció (+1 Poder por liderar su arena).");
+                        state.ResolutionLog.Add($"• {card.Card.Name} se fortaleció (+1 Poder por liderar su arena).");
                     }
                 }
 
@@ -456,7 +456,7 @@ namespace CometaChampions.Core.Rules
                         card.Card.Id == "BEAST_FENIX" && aiPower > pPower)
                     {
                         card.ApplyPowerModifier(card.Card.Ability.Value);
-                        state.ResolutionLog.Add($"🔥 {card.Card.Name} rival se fortaleció (+1 Poder por liderar su arena).");
+                        state.ResolutionLog.Add($"• {card.Card.Name} rival se fortaleció (+1 Poder por liderar su arena).");
                     }
                 }
             }

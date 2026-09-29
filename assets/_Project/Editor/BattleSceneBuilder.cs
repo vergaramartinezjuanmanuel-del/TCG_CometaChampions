@@ -110,6 +110,7 @@ namespace CometaChampions.Editor
             so.FindProperty("gameOverModal").objectReferenceValue = gameOverModal;
             so.FindProperty("helpModal").objectReferenceValue = helpModal;
             so.FindProperty("mulliganModal").objectReferenceValue = mulliganModal;
+            so.FindProperty("battleBackgroundImage").objectReferenceValue = bgImg;
             so.FindProperty("autoStartOnAwake").boolValue = true;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -143,10 +144,10 @@ namespace CometaChampions.Editor
             var so = new SerializedObject(headerView);
 
             // Left: Home & Help buttons
-            var homeBtn = CreateButton("HomeBtn", headerObj.transform, "🏠 MENÚ", new Vector2(100, -40), new Vector2(130, 48));
+            var homeBtn = CreateButton("HomeBtn", headerObj.transform, "MENÚ", new Vector2(100, -40), new Vector2(130, 48));
             homeBtn.GetComponent<Image>().color = new Color(0.18f, 0.22f, 0.32f);
 
-            var helpBtn = CreateButton("HelpBtn", headerObj.transform, "❓ REGLAS", new Vector2(250, -40), new Vector2(140, 48));
+            var helpBtn = CreateButton("HelpBtn", headerObj.transform, "? REGLAS", new Vector2(250, -40), new Vector2(140, 48));
             helpBtn.GetComponent<Image>().color = new Color(0.18f, 0.22f, 0.32f);
 
             // Center: Turn, Score, Energy
@@ -156,14 +157,14 @@ namespace CometaChampions.Editor
             var scoreTMP = CreateTMPText("ScoreText", headerObj.transform, "0 vs 0", new Vector2(800, -40), new Vector2(200, 50), 26, TextAlignmentOptions.Center);
             scoreTMP.color = Color.white;
 
-            var energyTMP = CreateTMPText("EnergyText", headerObj.transform, "🟢 <b>1</b> / 1", new Vector2(1040, -40), new Vector2(200, 50), 24, TextAlignmentOptions.Center);
+            var energyTMP = CreateTMPText("EnergyText", headerObj.transform, "ENERGÍA <b>1</b> / 1", new Vector2(1040, -40), new Vector2(200, 50), 24, TextAlignmentOptions.Center);
             energyTMP.color = Color.white;
 
             // Right: Restart & End Turn Button
-            var restartBtn = CreateButton("RestartBtn", headerObj.transform, "🔄", new Vector2(1340, -40), new Vector2(60, 48));
+            var restartBtn = CreateButton("RestartBtn", headerObj.transform, "REINICIAR", new Vector2(1340, -40), new Vector2(130, 48));
             restartBtn.GetComponent<Image>().color = new Color(0.25f, 0.28f, 0.38f);
 
-            var endTurnBtn = CreateButton("EndTurnBtn", headerObj.transform, "FINALIZAR TURNO ⚔️", new Vector2(1640, -40), new Vector2(280, 56));
+            var endTurnBtn = CreateButton("EndTurnBtn", headerObj.transform, "FINALIZAR TURNO", new Vector2(1640, -40), new Vector2(280, 56));
             var endTurnImg = endTurnBtn.GetComponent<Image>();
             endTurnImg.color = new Color(0.15f, 0.55f, 0.25f); // Deep emerald green
             var endTurnTMP = endTurnBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -272,7 +273,7 @@ namespace CometaChampions.Editor
                 arenaNameTMP.color = new Color(0.96f, 0.82f, 0.35f);
                 so.FindProperty("arenaNameText").objectReferenceValue = arenaNameTMP;
 
-                var clanBadgeTMP = CreateTMPText("ClanBadge", arenaCenter.transform, "🌳 Milenarios", new Vector2(0, 75), new Vector2(250, 28), 16, TextAlignmentOptions.Center);
+                var clanBadgeTMP = CreateTMPText("ClanBadge", arenaCenter.transform, "Milenarios", new Vector2(0, 75), new Vector2(250, 28), 16, TextAlignmentOptions.Center);
                 clanBadgeTMP.color = Color.white;
                 so.FindProperty("arenaClanText").objectReferenceValue = clanBadgeTMP;
 
@@ -300,13 +301,13 @@ namespace CometaChampions.Editor
                 pPowerTMP.color = new Color(0.2f, 0.85f, 0.35f);
                 so.FindProperty("playerPowerText").objectReferenceValue = pPowerTMP;
 
-                var statusTMP = CreateTMPText("StatusText", arenaCenter.transform, "⚔️ Empate", new Vector2(0, -65), new Vector2(400, 30), 16, TextAlignmentOptions.Center);
+                var statusTMP = CreateTMPText("StatusText", arenaCenter.transform, "Empate", new Vector2(0, -65), new Vector2(400, 30), 16, TextAlignmentOptions.Center);
                 statusTMP.fontStyle = FontStyles.Bold;
                 statusTMP.color = new Color(0.9f, 0.85f, 0.3f);
                 so.FindProperty("laneStatusText").objectReferenceValue = statusTMP;
 
                 // Deploy Button
-                var deployBtn = CreateButton("DeployBtn", arenaCenter.transform, "➕ Desplegar Aquí", new Vector2(0, -105), new Vector2(240, 44));
+                var deployBtn = CreateButton("DeployBtn", arenaCenter.transform, "+ Desplegar Aquí", new Vector2(0, -105), new Vector2(240, 44));
                 var deployImg = deployBtn.GetComponent<Image>();
                 deployImg.color = new Color(0.12f, 0.60f, 0.85f); // Vivid cyan blue
                 var depTMP = deployBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -402,7 +403,7 @@ namespace CometaChampions.Editor
             undoBg.color = new Color(0.9f, 0.2f, 0.2f, 0.95f);
             undoBg.raycastTarget = false;
 
-            var undoText = CreateTMPText("Icon", undoObj.transform, "✕", Vector2.zero, new Vector2(32, 32), 16, TextAlignmentOptions.Center);
+            var undoText = CreateTMPText("Icon", undoObj.transform, "X", Vector2.zero, new Vector2(32, 32), 16, TextAlignmentOptions.Center);
             undoText.fontStyle = FontStyles.Bold;
             undoText.color = Color.white;
             undoText.raycastTarget = false;
@@ -432,20 +433,24 @@ namespace CometaChampions.Editor
             rect.sizeDelta = new Vector2(0, 215);
 
             var bgImg = trayObj.AddComponent<Image>();
-            bgImg.color = new Color(0.06f, 0.08f, 0.12f, 0.95f);
+            var holderSprite = Resources.Load<Sprite>("UI/cards_holder");
+            if (holderSprite != null)
+            {
+                bgImg.sprite = holderSprite;
+                bgImg.color = Color.white;
+            }
+            else
+            {
+                bgImg.color = new Color(0.06f, 0.08f, 0.12f, 0.95f);
+            }
 
             var cardsContainer = CreateUIElement("CardsContainer", trayObj.transform);
             var cRect = cardsContainer.GetComponent<RectTransform>();
-            cRect.anchorMin = Vector2.zero;
-            cRect.anchorMax = Vector2.one;
-            cRect.offsetMin = new Vector2(20, 10);
-            cRect.offsetMax = new Vector2(-20, -10);
-
-            var layout = cardsContainer.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 15;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
+            cRect.anchorMin = new Vector2(0.5f, 0f);
+            cRect.anchorMax = new Vector2(0.5f, 0f);
+            cRect.pivot = new Vector2(0.5f, 0f);
+            cRect.anchoredPosition = new Vector2(0f, 15f);
+            cRect.sizeDelta = new Vector2(1000f, 200f);
 
             // Empty hand label
             var emptyLabelTMP = CreateTMPText("EmptyLabel", trayObj.transform, "Mano vacía. Espera al siguiente turno...", Vector2.zero, new Vector2(600, 40), 20, TextAlignmentOptions.Center);
@@ -477,9 +482,21 @@ namespace CometaChampions.Editor
             var cardObj = CreateUIElement(name, parent);
             var rect = cardObj.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(135, 195);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+
+            var maskSprite = Resources.Load<Sprite>("UI/rounded_card_mask");
+            var borderSprite = Resources.Load<Sprite>("UI/rounded_card_border");
 
             var bgImg = cardObj.AddComponent<Image>();
-            bgImg.color = new Color(0.12f, 0.15f, 0.22f);
+            if (maskSprite != null)
+            {
+                bgImg.sprite = maskSprite;
+                bgImg.type = Image.Type.Sliced;
+            }
+            bgImg.color = new Color(0.10f, 0.13f, 0.19f, 1f);
+
+            var mask = cardObj.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
 
             var btn = cardObj.AddComponent<Button>();
 
@@ -530,15 +547,36 @@ namespace CometaChampions.Editor
             nameTMP.color = Color.white;
             nameTMP.raycastTarget = false;
 
+            // Normal Border
+            var borderObj = CreateUIElement("Border", cardObj.transform);
+            var borderRect = borderObj.GetComponent<RectTransform>();
+            borderRect.anchorMin = Vector2.zero;
+            borderRect.anchorMax = Vector2.one;
+            borderRect.offsetMin = Vector2.zero;
+            borderRect.offsetMax = Vector2.zero;
+            var borderImg = borderObj.AddComponent<Image>();
+            if (borderSprite != null)
+            {
+                borderImg.sprite = borderSprite;
+                borderImg.type = Image.Type.Sliced;
+            }
+            borderImg.color = new Color(0.35f, 0.45f, 0.65f, 0.8f);
+            borderImg.raycastTarget = false;
+
             // Selected Border
             var selObj = CreateUIElement("SelectedBorder", cardObj.transform);
             var selRect = selObj.GetComponent<RectTransform>();
             selRect.anchorMin = Vector2.zero;
             selRect.anchorMax = Vector2.one;
-            selRect.offsetMin = new Vector2(-3, -3);
-            selRect.offsetMax = new Vector2(3, 3);
+            selRect.offsetMin = new Vector2(-2, -2);
+            selRect.offsetMax = new Vector2(2, 2);
             var selImg = selObj.AddComponent<Image>();
-            selImg.color = new Color(0.96f, 0.82f, 0.25f, 0.85f); // Vibrant Gold
+            if (borderSprite != null)
+            {
+                selImg.sprite = borderSprite;
+                selImg.type = Image.Type.Sliced;
+            }
+            selImg.color = new Color(0.16f, 0.85f, 0.95f, 1f); // Vibrant Cyan Glow
             selImg.raycastTarget = false;
             selObj.SetActive(false);
 
@@ -590,7 +628,7 @@ namespace CometaChampions.Editor
             var wImg = windowObj.AddComponent<Image>();
             wImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
 
-            var titleTMP = CreateTMPText("Title", windowObj.transform, "🏆 ¡VICTORIA ABSOLUTA!", new Vector2(0, 190), new Vector2(600, 50), 32, TextAlignmentOptions.Center);
+            var titleTMP = CreateTMPText("Title", windowObj.transform, "¡VICTORIA ABSOLUTA!", new Vector2(0, 190), new Vector2(600, 50), 32, TextAlignmentOptions.Center);
             titleTMP.fontStyle = FontStyles.Bold;
             titleTMP.color = new Color(0.2f, 0.85f, 0.35f);
 
@@ -605,21 +643,21 @@ namespace CometaChampions.Editor
             var sbImg = statsBox.AddComponent<Image>();
             sbImg.color = new Color(0.06f, 0.08f, 0.12f, 0.85f);
 
-            var pStatsTMP = CreateTMPText("PlayerStats", statsBox.transform, "2\nTus Arenas (18 ⚔️)", new Vector2(-150, 0), new Vector2(220, 80), 20, TextAlignmentOptions.Center);
+            var pStatsTMP = CreateTMPText("PlayerStats", statsBox.transform, "2\nTus Arenas (18 Poder)", new Vector2(-150, 0), new Vector2(220, 80), 20, TextAlignmentOptions.Center);
             var vsStatsTMP = CreateTMPText("Vs", statsBox.transform, "VS", Vector2.zero, new Vector2(60, 60), 24, TextAlignmentOptions.Center);
             vsStatsTMP.color = new Color(0.6f, 0.6f, 0.65f);
-            var aiStatsTMP = CreateTMPText("AiStats", statsBox.transform, "1\nArenas Rival (12 ⚔️)", new Vector2(150, 0), new Vector2(220, 80), 20, TextAlignmentOptions.Center);
+            var aiStatsTMP = CreateTMPText("AiStats", statsBox.transform, "1\nArenas Rival (12 Poder)", new Vector2(150, 0), new Vector2(220, 80), 20, TextAlignmentOptions.Center);
 
             // Rewards
-            var rewardsTMP = CreateTMPText("Rewards", windowObj.transform, "Recompensas: +150 🪙 Oro  •  +50 🌟 XP", new Vector2(0, -60), new Vector2(560, 36), 18, TextAlignmentOptions.Center);
+            var rewardsTMP = CreateTMPText("Rewards", windowObj.transform, "Recompensas: +150 Oro  •  +50 XP", new Vector2(0, -60), new Vector2(560, 36), 18, TextAlignmentOptions.Center);
             rewardsTMP.fontStyle = FontStyles.Bold;
 
             // Buttons
-            var playAgainBtn = CreateButton("PlayAgainBtn", windowObj.transform, "🔄 Jugar Otra Partida", new Vector2(-140, -170), new Vector2(240, 52));
+            var playAgainBtn = CreateButton("PlayAgainBtn", windowObj.transform, "Jugar Otra Partida", new Vector2(-140, -170), new Vector2(240, 52));
             var paImg = playAgainBtn.GetComponent<Image>();
             paImg.color = new Color(0.15f, 0.55f, 0.25f);
 
-            var homeBtn = CreateButton("HomeBtn", windowObj.transform, "🏠 Volver al Menú", new Vector2(140, -170), new Vector2(220, 52));
+            var homeBtn = CreateButton("HomeBtn", windowObj.transform, "Volver al Menú", new Vector2(140, -170), new Vector2(220, 52));
             var hImg = homeBtn.GetComponent<Image>();
             hImg.color = new Color(0.20f, 0.25f, 0.35f);
 
@@ -670,7 +708,7 @@ namespace CometaChampions.Editor
             subtitleTMP.color = new Color(0.7f, 0.75f, 0.85f);
 
             // Close button X
-            var closeBtn = CreateButton("CloseXBtn", windowObj.transform, "✕", new Vector2(430, 280), new Vector2(44, 44));
+            var closeBtn = CreateButton("CloseXBtn", windowObj.transform, "X", new Vector2(430, 280), new Vector2(44, 44));
             closeBtn.GetComponent<Image>().color = new Color(0.3f, 0.35f, 0.45f);
 
             // 4 Rule cards in 2x2 grid
@@ -679,10 +717,10 @@ namespace CometaChampions.Editor
 
             string[] ruleTitles = new string[]
             {
-                "🏆 1. Mazo y Objetivo (2 de 3)",
-                "🃏 2. Mano Inicial y Mulligan",
-                "⚡ 3. Acciones Simultáneas",
-                "🌀 4. Habilidades y Círculo Cometa"
+                "1. Mazo y Objetivo (2 de 3)",
+                "2. Mano Inicial y Mulligan",
+                "3. Acciones Simultáneas",
+                "4. Habilidades y Círculo Cometa"
             };
 
             string[] ruleDescs = new string[]
@@ -690,7 +728,7 @@ namespace CometaChampions.Editor
                 "Mazo de exactamente 12 cartas (máx 2 copias). Se combate en 3 Arenas a la vez. Al fin del Turno 6, gana quien lidere al menos 2 de las 3 arenas o desempate por Poder Total.",
                 "Inicias con 4 cartas. Antes del Turno 1 puedes realizar 1 Mulligan para cambiar cualquier número de cartas. En cada turno se roba 1 carta (viendo 10 de 12 cartas).",
                 "Ambos jugadores eligen jugadas al mismo tiempo; las cartas rivales permanecen boca abajo hasta que presionas 'Finalizar Turno', activando la resolución en 8 pasos.",
-                "Héroes, Bestias y Trompos con habilidades OnPlay, Pasivas, Fin de Turno y Combos. Ventaja de clan otorga +1 Poder: 🌳 Milenarios > ⛓️ Fugitivos > 🪓 Depredadores > 🐉 Míticos."
+                "Héroes, Bestias y Trompos con habilidades OnPlay, Pasivas, Fin de Turno y Combos. Ventaja de clan otorga +1 Poder: Milenarios > Fugitivos > Depredadores > Míticos."
             };
 
             for (int r = 0; r < 4; r++)
@@ -712,7 +750,7 @@ namespace CometaChampions.Editor
             }
 
             // Got it button
-            var gotItBtn = CreateButton("GotItBtn", windowObj.transform, "¡Entendido, a Combatir! ⚔️", new Vector2(0, -260), new Vector2(300, 52));
+            var gotItBtn = CreateButton("GotItBtn", windowObj.transform, "¡Entendido, a Combatir!", new Vector2(0, -260), new Vector2(300, 52));
             var gImg = gotItBtn.GetComponent<Image>();
             gImg.color = new Color(0.12f, 0.55f, 0.85f);
 
