@@ -140,94 +140,16 @@ namespace CometaChampions.Runtime.UI
             var bgImg = slot.AddComponent<Image>();
             bgImg.color = new Color(0.12f, 0.14f, 0.20f, 0.95f);
 
-            // Card artwork thumbnail
+            // Full dynamic card artwork container
             var artObj = new GameObject("Artwork", typeof(RectTransform));
             artObj.transform.SetParent(slot.transform, false);
             var artRect = artObj.GetComponent<RectTransform>();
-            artRect.anchorMin = new Vector2(0.05f, 0.20f);
-            artRect.anchorMax = new Vector2(0.95f, 0.95f);
+            artRect.anchorMin = Vector2.zero;
+            artRect.anchorMax = Vector2.one;
             artRect.offsetMin = Vector2.zero;
             artRect.offsetMax = Vector2.zero;
 
-            var artImg = artObj.AddComponent<Image>();
-            artImg.sprite = Card3D.GetCardThumbnail(card) ?? Card3D.GetReversoThumbnail("oro");
-            artImg.preserveAspect = true;
-
-            // Name label at bottom
-            var nameObj = new GameObject("NameLabel", typeof(RectTransform));
-            nameObj.transform.SetParent(slot.transform, false);
-            var nameRect = nameObj.GetComponent<RectTransform>();
-            nameRect.anchorMin = new Vector2(0, 0);
-            nameRect.anchorMax = new Vector2(1, 0.20f);
-            nameRect.offsetMin = new Vector2(2, 2);
-            nameRect.offsetMax = new Vector2(-2, -2);
-
-            var nameTMP = nameObj.AddComponent<TextMeshProUGUI>();
-            nameTMP.text = card.Name;
-            nameTMP.fontSize = 11;
-            nameTMP.fontStyle = FontStyles.Bold;
-            nameTMP.alignment = TextAlignmentOptions.Center;
-            nameTMP.color = Color.white;
-            nameTMP.overflowMode = TextOverflowModes.Ellipsis;
-
-            // Cost badge (Top-Left)
-            var costObj = new GameObject("CostBadge", typeof(RectTransform));
-            costObj.transform.SetParent(slot.transform, false);
-            var costRect = costObj.GetComponent<RectTransform>();
-            costRect.anchorMin = new Vector2(0, 1);
-            costRect.anchorMax = new Vector2(0, 1);
-            costRect.pivot = new Vector2(0, 1);
-            costRect.anchoredPosition = new Vector2(4, -4);
-            costRect.sizeDelta = new Vector2(26, 26);
-
-            var costBg = costObj.AddComponent<Image>();
-            costBg.color = new Color(0.1f, 0.65f, 0.25f, 0.95f); // Green cost badge
-
-            var costTextObj = new GameObject("CostVal", typeof(RectTransform));
-            costTextObj.transform.SetParent(costObj.transform, false);
-            var costTextRect = costTextObj.GetComponent<RectTransform>();
-            costTextRect.anchorMin = Vector2.zero;
-            costTextRect.anchorMax = Vector2.one;
-            costTextRect.offsetMin = Vector2.zero;
-            costTextRect.offsetMax = Vector2.zero;
-
-            var costTMP = costTextObj.AddComponent<TextMeshProUGUI>();
-            costTMP.text = card.EnergyCost.ToString();
-            costTMP.fontSize = 14;
-            costTMP.fontStyle = FontStyles.Bold;
-            costTMP.alignment = TextAlignmentOptions.Center;
-            costTMP.color = Color.white;
-
-            // Power badge (Bottom-Right of artwork)
-            var pwrObj = new GameObject("PowerBadge", typeof(RectTransform));
-            pwrObj.transform.SetParent(slot.transform, false);
-            var pwrRect = pwrObj.GetComponent<RectTransform>();
-            pwrRect.anchorMin = new Vector2(1, 0);
-            pwrRect.anchorMax = new Vector2(1, 0);
-            pwrRect.pivot = new Vector2(1, 0);
-            pwrRect.anchoredPosition = new Vector2(-4, 28);
-            pwrRect.sizeDelta = new Vector2(26, 26);
-
-            var pwrBg = pwrObj.AddComponent<Image>();
-            pwrBg.color = new Color(0.85f, 0.2f, 0.2f, 0.95f); // Red power badge
-
-            var pwrTextObj = new GameObject("PowerVal", typeof(RectTransform));
-            pwrTextObj.transform.SetParent(pwrObj.transform, false);
-            var pwrTextRect = pwrTextObj.GetComponent<RectTransform>();
-            pwrTextRect.anchorMin = Vector2.zero;
-            pwrTextRect.anchorMax = Vector2.one;
-            pwrTextRect.offsetMin = Vector2.zero;
-            pwrTextRect.offsetMax = Vector2.zero;
-
-            var pwrTMP = pwrTextObj.AddComponent<TextMeshProUGUI>();
-            int pwr = card.Category == CardCategory.PhysicalTrompo && card.Power <= 0
-                ? Math.Max(2, card.EnergyCost + 1)
-                : card.Power;
-            pwrTMP.text = pwr.ToString();
-            pwrTMP.fontSize = 14;
-            pwrTMP.fontStyle = FontStyles.Bold;
-            pwrTMP.alignment = TextAlignmentOptions.Center;
-            pwrTMP.color = Color.white;
+            DynamicCardAssembler.AssembleCard(card, artRect);
 
             // Remove button (Top-Right 'X')
             var remObj = new GameObject("RemoveBtn", typeof(RectTransform));

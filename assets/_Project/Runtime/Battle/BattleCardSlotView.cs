@@ -66,6 +66,9 @@ namespace CometaChampions.Runtime.Battle
                 // Empty slot appearance
                 if (cardThumbnail != null)
                 {
+                    var existingDyn = cardThumbnail.transform.Find("DynamicCard");
+                    if (existingDyn != null) existingDyn.gameObject.SetActive(false);
+
                     cardThumbnail.enabled = false;
                     cardThumbnail.sprite = null;
                 }
@@ -83,9 +86,14 @@ namespace CometaChampions.Runtime.Battle
                 // Unrevealed / Face-down opponent card (Rule 17)
                 if (cardThumbnail != null)
                 {
+                    var existingDyn = cardThumbnail.transform.Find("DynamicCard");
+                    if (existingDyn != null) existingDyn.gameObject.SetActive(false);
+
                     cardThumbnail.enabled = true;
-                    cardThumbnail.sprite = null;
-                    cardThumbnail.color = new Color(0.12f, 0.15f, 0.28f, 0.95f); // Deep mysterious card back color
+                    cardThumbnail.sprite = Card3D.GetReversoThumbnail("oro");
+                    cardThumbnail.color = cardThumbnail.sprite != null
+                        ? Color.white
+                        : new Color(0.12f, 0.15f, 0.28f, 0.95f);
                 }
 
                 if (slotFrame != null)
@@ -109,10 +117,23 @@ namespace CometaChampions.Runtime.Battle
                 // Occupied slot appearance (revealed)
                 if (cardThumbnail != null)
                 {
-                    var sprite = Card3D.GetCardThumbnail(card) ?? Card3D.GetReversoThumbnail("oro");
-                    cardThumbnail.sprite = sprite;
-                    cardThumbnail.color = Color.white;
                     cardThumbnail.enabled = true;
+                    cardThumbnail.sprite = null;
+                    cardThumbnail.color = Color.clear;
+
+                    var assembled = DynamicCardAssembler.AssembleCard(card, cardThumbnail.rectTransform);
+                    if (assembled != null)
+                    {
+                        var atkTmpTrans = assembled.transform.Find("ReferenceCanvas_750x1050/NameBar/AtkBadge/AtkText");
+                        if (atkTmpTrans != null)
+                        {
+                            var atkTmp = atkTmpTrans.GetComponent<TextMeshProUGUI>();
+                            if (atkTmp != null)
+                            {
+                                atkTmp.text = effectivePower.ToString();
+                            }
+                        }
+                    }
                 }
 
                 if (slotFrame != null)

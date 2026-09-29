@@ -1,6 +1,10 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
+using CometaChampions.Core.Enums;
+using CometaChampions.Core.Helpers;
 using CometaChampions.Core.Models;
 
 namespace CometaChampions.Tests
@@ -110,5 +114,119 @@ namespace CometaChampions.Tests
                 Assert.IsFalse(string.IsNullOrEmpty(showcaseCard.Image), $"Matched card for '{def.Id}' must have an image path.");
             }
         }
+
+        [Test]
+        public void CardArtMapper_MapsAll80ShowcaseCards_ToValidTarjetasPath()
+        {
+            foreach (var card in CardShowcaseCatalog.Cards)
+            {
+                string path = CardArtMapper.GetFlatArtPath(card);
+                Assert.IsFalse(string.IsNullOrEmpty(path), $"Flat art path for {card.Id} ({card.Name}) must not be empty.");
+                Assert.IsTrue(path.StartsWith("Tarjetas/"), $"Path '{path}' for {card.Id} must start with 'Tarjetas/'.");
+                Assert.IsTrue(path.EndsWith(".png"), $"Path '{path}' for {card.Id} must end with '.png'.");
+            }
+        }
+
+        [Test]
+        public void CardArtMapper_MapsAll20MvpCards_ToValidTarjetasPath()
+        {
+            foreach (var def in MvpCardCatalog.AllCards)
+            {
+                string path = CardArtMapper.GetFlatArtPath(def);
+                Assert.IsFalse(string.IsNullOrEmpty(path), $"Flat art path for MVP card {def.Id} ({def.Name}) must not be empty.");
+                Assert.IsTrue(path.StartsWith("Tarjetas/"), $"Path '{path}' for {def.Id} must start with 'Tarjetas/'.");
+                Assert.IsTrue(path.EndsWith(".png"), $"Path '{path}' for {def.Id} must end with '.png'.");
+            }
+        }
+
+        [Test]
+        public void CardArtMapper_CategoryDisplayNames_AndClanAssets_AreCorrect()
+        {
+            Assert.AreEqual("HEROES", CardArtMapper.GetCategoryDisplayName(CardCategory.Champion));
+            Assert.AreEqual("BESTIAS", CardArtMapper.GetCategoryDisplayName(CardCategory.KombatBeast));
+            Assert.AreEqual("TROMPOS", CardArtMapper.GetCategoryDisplayName(CardCategory.PhysicalTrompo));
+            Assert.AreEqual("ARENAS", CardArtMapper.GetCategoryDisplayName(CardCategory.Arena));
+
+            Assert.AreEqual("HEROES", CardArtMapper.GetCategoryDisplayName("champions"));
+            Assert.AreEqual("BESTIAS", CardArtMapper.GetCategoryDisplayName("kombat"));
+            Assert.AreEqual("TROMPOS", CardArtMapper.GetCategoryDisplayName("trompos"));
+            Assert.AreEqual("ARENAS", CardArtMapper.GetCategoryDisplayName("arenas"));
+
+            Assert.AreEqual("Tarjetas/UI/Milenials.png", CardArtMapper.GetClanBannerPath(ClanType.Milenarios));
+            Assert.AreEqual("Tarjetas/UI/Fugitives.png", CardArtMapper.GetClanBannerPath(ClanType.Fugitivos));
+            Assert.AreEqual("Tarjetas/UI/Predators.png", CardArtMapper.GetClanBannerPath(ClanType.Depredadores));
+            Assert.AreEqual("Tarjetas/UI/Mythicals.png", CardArtMapper.GetClanBannerPath(ClanType.Miticos));
+
+            Assert.AreEqual("Tarjetas/UI/BG_Milenials.png", CardArtMapper.GetClanBgPath(ClanType.Milenarios));
+            Assert.AreEqual("Tarjetas/UI/BG_Fugitives.png", CardArtMapper.GetClanBgPath(ClanType.Fugitivos));
+            Assert.AreEqual("Tarjetas/UI/BG_Predators.png", CardArtMapper.GetClanBgPath(ClanType.Depredadores));
+            Assert.AreEqual("Tarjetas/UI/BG_Mythicals.png", CardArtMapper.GetClanBgPath(ClanType.Miticos));
+        }
+
+        [Test]
+        public void CardArtMapper_AllMappedFiles_ExistOnDisk()
+        {
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return; // Skip only if running on a different machine
+
+            string artRoot = Path.Combine(projectRoot, "Assets/_Project/Art");
+
+            static bool FileExistsUnicodeSafe(string fullPath)
+            {
+                if (File.Exists(fullPath)) return true;
+                if (File.Exists(fullPath.Normalize(NormalizationForm.FormC))) return true;
+                if (File.Exists(fullPath.Normalize(NormalizationForm.FormD))) return true;
+
+                string dir = Path.GetDirectoryName(fullPath);
+                string fileName = Path.GetFileName(fullPath);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                {
+                    string targetNfc = fileName.Normalize(NormalizationForm.FormC);
+                    foreach (var f in Directory.GetFiles(dir))
+                    {
+                        if (string.Equals(Path.GetFileName(f).Normalize(NormalizationForm.FormC), targetNfc, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            foreach (var card in CardShowcaseCatalog.Cards)
+            {
+                string rel = CardArtMapper.GetFlatArtPath(card);
+                string full = Path.Combine(artRoot, rel);
+                Assert.IsTrue(FileExistsUnicodeSafe(full), $"Missing flat art file on disk for Showcase card {card.Id} ({card.Name}): {full}");
+            }
+
+            foreach (var def in MvpCardCatalog.AllCards)
+            {
+                string rel = CardArtMapper.GetFlatArtPath(def);
+                string full = Path.Combine(artRoot, rel);
+                Assert.IsTrue(FileExistsUnicodeSafe(full), $"Missing flat art file on disk for MVP card {def.Id} ({def.Name}): {full}");
+            }
+
+            string[] uiPaths =
+            {
+                CardArtMapper.GetCostIconPath(),
+                CardArtMapper.GetPlecaPath(),
+                CardArtMapper.GetClanBannerPath(ClanType.Milenarios),
+                CardArtMapper.GetClanBannerPath(ClanType.Fugitivos),
+                CardArtMapper.GetClanBannerPath(ClanType.Depredadores),
+                CardArtMapper.GetClanBannerPath(ClanType.Miticos),
+                CardArtMapper.GetClanBgPath(ClanType.Milenarios),
+                CardArtMapper.GetClanBgPath(ClanType.Fugitivos),
+                CardArtMapper.GetClanBgPath(ClanType.Depredadores),
+                CardArtMapper.GetClanBgPath(ClanType.Miticos)
+            };
+
+            foreach (var uiRel in uiPaths)
+            {
+                string full = Path.Combine(artRoot, uiRel);
+                Assert.IsTrue(FileExistsUnicodeSafe(full), $"Missing UI asset file on disk: {full}");
+            }
+        }
     }
 }
+

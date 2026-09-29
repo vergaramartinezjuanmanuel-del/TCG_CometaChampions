@@ -167,9 +167,9 @@ namespace CometaChampions.Runtime.Battle
 
                     if (cardArtImages != null && i < cardArtImages.Length && cardArtImages[i] != null)
                     {
-                        var sprite = Card3D.GetCardThumbnail(card) ?? Card3D.GetReversoThumbnail("oro");
-                        cardArtImages[i].sprite = sprite;
-                        cardArtImages[i].color = sprite != null ? Color.white : Color.clear;
+                        cardArtImages[i].sprite = null;
+                        cardArtImages[i].color = Color.clear;
+                        DynamicCardAssembler.AssembleCard(card, cardArtImages[i].rectTransform);
                     }
 
                     if (cardNameTexts != null && i < cardNameTexts.Length && cardNameTexts[i] != null)
@@ -330,9 +330,9 @@ namespace CometaChampions.Runtime.Battle
 
             if (cardArtImages != null && slotIndex < cardArtImages.Length && cardArtImages[slotIndex] != null)
             {
-                var sprite = Card3D.GetCardThumbnail(newCard) ?? Card3D.GetReversoThumbnail("oro");
-                cardArtImages[slotIndex].sprite = sprite;
-                cardArtImages[slotIndex].color = sprite != null ? Color.white : Color.clear;
+                cardArtImages[slotIndex].sprite = null;
+                cardArtImages[slotIndex].color = Color.clear;
+                DynamicCardAssembler.AssembleCard(newCard, cardArtImages[slotIndex].rectTransform);
             }
 
             if (cardNameTexts != null && slotIndex < cardNameTexts.Length && cardNameTexts[slotIndex] != null)

@@ -443,89 +443,14 @@ namespace CometaChampions.Runtime.UI
             frImg.raycastTarget = false;
             frontFace.SetActive(false);
 
-            // Card Inner Artwork
+            // Card Dynamic Assembled Artwork
             var artObj = new GameObject("ArtThumbnail", typeof(RectTransform));
             artObj.transform.SetParent(frontFace.transform, false);
             var aRect = artObj.GetComponent<RectTransform>();
-            aRect.anchorMin = new Vector2(0.05f, 0.27f);
-            aRect.anchorMax = new Vector2(0.95f, 0.89f);
+            aRect.anchorMin = new Vector2(0.03f, 0.14f);
+            aRect.anchorMax = new Vector2(0.97f, 0.98f);
             aRect.sizeDelta = Vector2.zero;
-            var artImg = artObj.AddComponent<Image>();
-            var sprite = Card3D.GetCardThumbnail(result.Card) ?? Card3D.GetReversoThumbnail("oro");
-            if (sprite != null)
-            {
-                artImg.sprite = sprite;
-                artImg.preserveAspect = true;
-            }
-            artImg.raycastTarget = false;
-
-            // Energy Cost Badge (Top-Left)
-            var costObj = new GameObject("CostBadge", typeof(RectTransform));
-            costObj.transform.SetParent(frontFace.transform, false);
-            var costRect = costObj.GetComponent<RectTransform>();
-            costRect.anchorMin = new Vector2(0, 1);
-            costRect.anchorMax = new Vector2(0, 1);
-            costRect.pivot = new Vector2(0, 1);
-            costRect.anchoredPosition = new Vector2(5, -5);
-            costRect.sizeDelta = new Vector2(28, 28);
-            var costBg = costObj.AddComponent<Image>();
-            costBg.color = new Color(0.12f, 0.65f, 0.28f, 0.95f);
-            costBg.raycastTarget = false;
-
-            var costTextObj = new GameObject("CostVal", typeof(RectTransform));
-            costTextObj.transform.SetParent(costObj.transform, false);
-            var costTextRect = costTextObj.GetComponent<RectTransform>();
-            costTextRect.anchorMin = Vector2.zero;
-            costTextRect.anchorMax = Vector2.one;
-            costTextRect.sizeDelta = Vector2.zero;
-            var costTMP = costTextObj.AddComponent<TextMeshProUGUI>();
-            costTMP.text = result.Card.EnergyCost.ToString();
-            costTMP.fontSize = 15;
-            costTMP.fontStyle = FontStyles.Bold;
-            costTMP.alignment = TextAlignmentOptions.Center;
-            costTMP.color = Color.white;
-            costTMP.raycastTarget = false;
-
-            // Power Badge (Top-Right)
-            var pwrObj = new GameObject("PowerBadge", typeof(RectTransform));
-            pwrObj.transform.SetParent(frontFace.transform, false);
-            var pwrRect = pwrObj.GetComponent<RectTransform>();
-            pwrRect.anchorMin = new Vector2(1, 1);
-            pwrRect.anchorMax = new Vector2(1, 1);
-            pwrRect.pivot = new Vector2(1, 1);
-            pwrRect.anchoredPosition = new Vector2(-5, -5);
-            pwrRect.sizeDelta = new Vector2(28, 28);
-            var pwrBg = pwrObj.AddComponent<Image>();
-            pwrBg.color = new Color(0.85f, 0.22f, 0.22f, 0.95f);
-            pwrBg.raycastTarget = false;
-
-            var pwrTextObj = new GameObject("PowerVal", typeof(RectTransform));
-            pwrTextObj.transform.SetParent(pwrObj.transform, false);
-            var pwrTextRect = pwrTextObj.GetComponent<RectTransform>();
-            pwrTextRect.anchorMin = Vector2.zero;
-            pwrTextRect.anchorMax = Vector2.one;
-            pwrTextRect.sizeDelta = Vector2.zero;
-            var pwrTMP = pwrTextObj.AddComponent<TextMeshProUGUI>();
-            pwrTMP.text = result.Card.Power.ToString();
-            pwrTMP.fontSize = 15;
-            pwrTMP.fontStyle = FontStyles.Bold;
-            pwrTMP.alignment = TextAlignmentOptions.Center;
-            pwrTMP.color = Color.white;
-            pwrTMP.raycastTarget = false;
-
-            // Name text
-            var nameObj = new GameObject("NameText", typeof(RectTransform));
-            nameObj.transform.SetParent(frontFace.transform, false);
-            var nRect = nameObj.GetComponent<RectTransform>();
-            nRect.anchorMin = new Vector2(0.04f, 0.14f);
-            nRect.anchorMax = new Vector2(0.96f, 0.26f);
-            nRect.sizeDelta = Vector2.zero;
-            var nTMP = nameObj.AddComponent<TextMeshProUGUI>();
-            nTMP.text = $"<b>{result.Card.Name}</b>";
-            nTMP.fontSize = 12;
-            nTMP.color = Color.white;
-            nTMP.alignment = TextAlignmentOptions.Center;
-            nTMP.raycastTarget = false;
+            DynamicCardAssembler.AssembleCard(result.Card, aRect);
 
             // Rarity / Status Badge (NEW CARD! vs DUPLICATE)
             var badgeObj = new GameObject("StatusBadge", typeof(RectTransform));

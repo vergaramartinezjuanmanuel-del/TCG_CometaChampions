@@ -127,11 +127,23 @@ namespace CometaChampions.Runtime.Battle
 
             if (cardThumbnail != null)
             {
-                var sprite = Card3D.GetCardThumbnail(card) ?? Card3D.GetReversoThumbnail("oro");
-                cardThumbnail.sprite = sprite;
-                // Keep artwork clearly readable, slightly softer if unaffordable
-                cardThumbnail.color = isAffordable ? Color.white : new Color(0.75f, 0.75f, 0.80f, 0.95f);
+                cardThumbnail.sprite = null;
+                cardThumbnail.color = Color.clear;
                 cardThumbnail.raycastTarget = false;
+
+                var assembled = DynamicCardAssembler.AssembleCard(card, cardThumbnail.rectTransform);
+                if (assembled != null)
+                {
+                    var costTmpTrans = assembled.transform.Find("ReferenceCanvas_750x1050/CostBadge/CostText");
+                    if (costTmpTrans != null)
+                    {
+                        var dynCostTmp = costTmpTrans.GetComponent<TextMeshProUGUI>();
+                        if (dynCostTmp != null)
+                        {
+                            dynCostTmp.color = isAffordable ? Color.white : new Color(1f, 0.27f, 0.23f, 1f);
+                        }
+                    }
+                }
             }
 
             if (costText != null)
@@ -140,6 +152,14 @@ namespace CometaChampions.Runtime.Battle
                     ? $"{card.EnergyCost}" 
                     : $"<color=#ff453a>{card.EnergyCost}</color>";
                 costText.raycastTarget = false;
+                if (costText.transform.parent != null && costText.transform.parent != transform)
+                {
+                    costText.transform.parent.gameObject.SetActive(false);
+                }
+                else
+                {
+                    costText.gameObject.SetActive(false);
+                }
             }
 
             if (attackText != null)
@@ -149,12 +169,21 @@ namespace CometaChampions.Runtime.Battle
                     : card.Power;
                 attackText.text = $"{pwr}";
                 attackText.raycastTarget = false;
+                if (attackText.transform.parent != null && attackText.transform.parent != transform)
+                {
+                    attackText.transform.parent.gameObject.SetActive(false);
+                }
+                else
+                {
+                    attackText.gameObject.SetActive(false);
+                }
             }
 
             if (nameText != null)
             {
                 nameText.text = card.Name;
                 nameText.raycastTarget = false;
+                nameText.gameObject.SetActive(false);
             }
 
             if (selectedBorder != null)

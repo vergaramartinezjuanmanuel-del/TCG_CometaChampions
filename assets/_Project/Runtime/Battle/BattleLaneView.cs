@@ -93,7 +93,7 @@ namespace CometaChampions.Runtime.Battle
 
             if (arenaBackground != null)
             {
-                var sprite = Card3D.GetCardThumbnail(arena);
+                var sprite = Card3D.GetFlatArtSprite(arena);
                 if (sprite != null)
                 {
                     arenaBackground.sprite = sprite;

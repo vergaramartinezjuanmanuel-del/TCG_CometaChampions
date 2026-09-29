@@ -61,11 +61,16 @@ namespace CometaChampions.Runtime.UI
             IsUnlocked = isUnlocked;
             onSelectedCallback = onSelected;
 
-            if (nameLabel != null) nameLabel.text = card.Name;
-            if (subtitleLabel != null) subtitleLabel.text = card.Category.ToString();
-
-            // Retrieve or load official thumbnail sprite
-            var sprite = customThumbnail ?? Card3D.GetCardThumbnail(card);
+            if (nameLabel != null)
+            {
+                nameLabel.text = card.Name;
+                nameLabel.gameObject.SetActive(false);
+            }
+            if (subtitleLabel != null)
+            {
+                subtitleLabel.text = card.Category.ToString();
+                subtitleLabel.gameObject.SetActive(false);
+            }
 
             if (cardThumbnail != null)
             {
@@ -79,9 +84,20 @@ namespace CometaChampions.Runtime.UI
 
                 if (isUnlocked)
                 {
-                    // Active / Unlocked: Full vivid color
-                    if (sprite != null) cardThumbnail.sprite = sprite;
-                    cardThumbnail.color = Color.white;
+                    // Active / Unlocked: Full vivid dynamic card
+                    if (customThumbnail != null)
+                    {
+                        var existingDyn = rt.Find("DynamicCard");
+                        if (existingDyn != null) existingDyn.gameObject.SetActive(false);
+                        cardThumbnail.sprite = customThumbnail;
+                        cardThumbnail.color = Color.white;
+                    }
+                    else
+                    {
+                        cardThumbnail.sprite = null;
+                        cardThumbnail.color = Color.clear;
+                        DynamicCardAssembler.AssembleCard(card, rt);
+                    }
                 }
                 else
                 {
@@ -93,21 +109,29 @@ namespace CometaChampions.Runtime.UI
                     switch (activeMode)
                     {
                         case LockedCardVisualMode.OfficialReverso:
+                            var existingDyn = rt.Find("DynamicCard");
+                            if (existingDyn != null) existingDyn.gameObject.SetActive(false);
                             var reversoSprite = Card3D.GetReversoThumbnail("oro");
                             if (reversoSprite != null) cardThumbnail.sprite = reversoSprite;
                             cardThumbnail.color = new Color(0.85f, 0.85f, 0.90f, 1f);
                             break;
 
                         case LockedCardVisualMode.FullColorUnderLock:
-                            if (sprite != null) cardThumbnail.sprite = sprite;
-                            cardThumbnail.color = new Color(0.80f, 0.80f, 0.85f, 1f);
-                            break;
-
                         case LockedCardVisualMode.DarkSilhouette:
                         default:
-                            if (sprite != null) cardThumbnail.sprite = sprite;
-                            // High-clarity dimmed look (clearly visible artwork through dark lock overlay)
-                            cardThumbnail.color = new Color(0.70f, 0.70f, 0.76f, 1f);
+                            if (customThumbnail != null)
+                            {
+                                var dyn = rt.Find("DynamicCard");
+                                if (dyn != null) dyn.gameObject.SetActive(false);
+                                cardThumbnail.sprite = customThumbnail;
+                                cardThumbnail.color = new Color(0.75f, 0.75f, 0.80f, 1f);
+                            }
+                            else
+                            {
+                                cardThumbnail.sprite = null;
+                                cardThumbnail.color = Color.clear;
+                                DynamicCardAssembler.AssembleCard(card, rt);
+                            }
                             break;
                     }
                 }
