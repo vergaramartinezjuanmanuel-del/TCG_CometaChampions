@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Services;
 using CometaChampions.Runtime.Cards;
@@ -42,6 +43,7 @@ namespace CometaChampions.Runtime.UI
 
         public void OpenModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (modalRoot != null) modalRoot.SetActive(true);
             if (statusFeedbackText != null) statusFeedbackText.text = string.Empty;
             UpdateHeaderInfo();
@@ -50,6 +52,7 @@ namespace CometaChampions.Runtime.UI
 
         public void CloseModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (modalRoot != null) modalRoot.SetActive(false);
         }
 
@@ -286,6 +289,7 @@ namespace CometaChampions.Runtime.UI
 
             if (Profile.TryEquipAvatar(avatarId, out var reason))
             {
+                AudioManager.Instance.PlaySfx(SfxType.EquipAvatar);
                 SaveManager.Instance.SaveProfile();
                 if (statusFeedbackText != null)
                 {
@@ -298,6 +302,7 @@ namespace CometaChampions.Runtime.UI
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
                 if (statusFeedbackText != null)
                 {
                     statusFeedbackText.text = $"<color=#FF4444>{reason}</color>";
@@ -311,6 +316,7 @@ namespace CometaChampions.Runtime.UI
 
             if (Profile.TryPurchaseAvatar(avatarId, out var reason))
             {
+                AudioManager.Instance.PlaySfx(SfxType.BuyAvatar);
                 SaveManager.Instance.SaveProfile();
                 var def = AvatarCatalog.GetAvatarById(avatarId);
                 if (statusFeedbackText != null)
@@ -323,6 +329,7 @@ namespace CometaChampions.Runtime.UI
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
                 if (statusFeedbackText != null)
                 {
                     statusFeedbackText.text = $"<color=#FF4444>{reason}</color>";

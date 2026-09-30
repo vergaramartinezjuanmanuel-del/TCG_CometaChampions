@@ -44,6 +44,7 @@ namespace CometaChampions.Runtime.UI
 
         public void Show(PlayerProfile profile, Action onDeckChanged = null)
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             currentProfile = profile ?? SaveManager.Profile;
             onDeckChangedCallback = onDeckChanged;
 
@@ -59,6 +60,7 @@ namespace CometaChampions.Runtime.UI
 
         public void Hide()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (modalRoot != null)
             {
                 modalRoot.SetActive(false);
@@ -190,6 +192,7 @@ namespace CometaChampions.Runtime.UI
             var activeDeck = GetActiveDeck();
             if (activeDeck == null || activeDeck.CardIds == null || index < 0 || index >= activeDeck.CardIds.Count) return;
 
+            AudioManager.Instance.PlaySfx(SfxType.RemoveCardFromDeck);
             activeDeck.CardIds.RemoveAt(index);
             SaveManager.Save();
 
@@ -201,6 +204,7 @@ namespace CometaChampions.Runtime.UI
         {
             if (currentProfile == null) return;
 
+            AudioManager.Instance.PlaySfx(SfxType.AutoCompleteDeck);
             var autoDeck = DeckValidator.CreateDeckFromInventory(currentProfile);
             var activeDeck = GetActiveDeck();
             if (activeDeck != null && autoDeck != null && autoDeck.Count == DeckValidator.ArenaRequiredDeckSize)

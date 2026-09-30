@@ -131,6 +131,24 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private Button craftCardButton;
         [SerializeField] private TextMeshProUGUI craftCardButtonText;
 
+        [Header("Settings Panel")]
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private GameObject settingsPanelRoot;
+        [SerializeField] private Button closeSettingsButton;
+        [SerializeField] private Button sfxToggleButton;
+        [SerializeField] private Button musicToggleButton;
+        [SerializeField] private TextMeshProUGUI sfxToggleLabel;
+        [SerializeField] private TextMeshProUGUI musicToggleLabel;
+
+        // Card Viewport VFX (Rotating Vortex & Aura Particles)
+        private Transform cardViewportTransform;
+        private GameObject cardVfxAnchor;
+        private ParticleSystem cardVortexSwirlPs;
+        private ParticleSystem cardAuraOrbsPs;
+        private ParticleSystem pedestalSparksPs;
+        private static Material cachedParticleMaterial;
+        private static Texture2D cachedParticleTexture;
+
         // Runtime State
         private CardCategory currentCategory = CardCategory.Champion;
         private ClanType currentClanFilter = ClanType.None;
@@ -145,6 +163,11 @@ namespace CometaChampions.Runtime.UI
         {
             EnsureClear3DViewport();
             EnsureStudioLighting();
+        }
+
+        private void Update()
+        {
+            UpdateCardViewportVfxRotation();
         }
 
         private void EnsureClear3DViewport()
@@ -205,14 +228,19 @@ namespace CometaChampions.Runtime.UI
 
             if (card3D == null)
             {
-                card3D = centerObj.GetComponent<Card3D>() ?? centerObj.AddComponent<Card3D>();
+                card3D = centerObj.GetComponent<Card3D>();
+                if (card3D == null) card3D = centerObj.AddComponent<Card3D>();
             }
             card3D.EnsureHierarchy();
 
             if (card3DViewer == null)
             {
-                card3DViewer = centerObj.GetComponent<Card3DViewer>() ?? centerObj.AddComponent<Card3DViewer>();
+                card3DViewer = centerObj.GetComponent<Card3DViewer>();
+                if (card3DViewer == null) card3DViewer = centerObj.AddComponent<Card3DViewer>();
             }
+
+            cardViewportTransform = centerObj.transform;
+            SetupCardViewportVfx(cardViewportTransform);
 
             // 5. Ensure Showcase_Pedestal is stationary and unparented from rotating anchor, with mesh disabled so the painted pedestal artwork is shown
             var pedestal = GameObject.Find("Showcase_Pedestal");
@@ -390,6 +418,7 @@ namespace CometaChampions.Runtime.UI
             SetupNavigation();
             SetupClanDropdown();
             Setup3DControls();
+            SetupSettingsPanel();
             SelectCategory(CardCategory.Champion);
             UpdateDeckUI();
 
@@ -403,6 +432,8 @@ namespace CometaChampions.Runtime.UI
                     card3D.SetReverso(currentReversoId);
                 }
             }
+
+            AudioManager.Instance.PlayBgm(BgmType.Home);
         }
 
         private void SetupHeaderAndCurrency()
@@ -428,6 +459,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnPacksButtonClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (packShopModal != null)
             {
                 packShopModal.Show(onInventoryUpdated: () =>
@@ -471,6 +503,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnAvatarButtonClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (avatarModal != null)
             {
                 avatarModal.OpenModal();
@@ -502,6 +535,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnDailyRewardButtonClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (dailyRewardModal != null)
             {
                 dailyRewardModal.OpenModal();
@@ -660,6 +694,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnDeckButtonClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (deckModal != null)
             {
                 deckModal.Show(Profile, UpdateDeckUI);
@@ -679,10 +714,12 @@ namespace CometaChampions.Runtime.UI
             if (copiesInDeck < DeckValidator.ArenaMaxCopiesPerCard && activeDeck.CardIds.Count < DeckValidator.ArenaRequiredDeckSize)
             {
                 activeDeck.CardIds.Add(selectedCard.Id);
+                AudioManager.Instance.PlaySfx(SfxType.AddCardToDeck);
             }
             else if (copiesInDeck > 0)
             {
                 activeDeck.CardIds.Remove(selectedCard.Id);
+                AudioManager.Instance.PlaySfx(SfxType.RemoveCardFromDeck);
             }
 
             SaveManager.Save();
@@ -695,6 +732,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnBattleClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             var activeDeck = GetActiveCombatDeck();
             if (activeDeck == null || activeDeck.CardIds == null || activeDeck.CardIds.Count < DeckValidator.ArenaRequiredDeckSize)
             {
@@ -713,6 +751,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnShowcase3DClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             UnityEngine.SceneManagement.SceneManager.LoadScene("CardShowcase");
         }
 
@@ -740,12 +779,14 @@ namespace CometaChampions.Runtime.UI
 
         public void SelectCategory(CardCategory category)
         {
+            AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             currentCategory = category;
             RefreshGrid();
         }
 
         private void OnClanFilterChanged(int index)
         {
+            AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             currentClanFilter = index switch
             {
                 1 => ClanType.Milenarios,
@@ -824,6 +865,7 @@ namespace CometaChampions.Runtime.UI
         public void SelectCard(CardDefinition card)
         {
             if (card == null) return;
+            AudioManager.Instance.PlaySfx(SfxType.CardGridSelect);
             selectedCard = card;
 
             // Highlight selected item in grid
@@ -847,6 +889,7 @@ namespace CometaChampions.Runtime.UI
             {
                 cardView3D.Bind(card, currentFoil);
             }
+            UpdateCardVfxTheme(card, currentFoil);
 
             // 2. Update Details Panel Header
             if (cardNameText != null) cardNameText.text = card.Name.ToUpper();
@@ -1004,6 +1047,7 @@ namespace CometaChampions.Runtime.UI
 
             if (Profile.TryUpgradeFoil(selectedCard.Id, out var failureReason))
             {
+                AudioManager.Instance.PlaySfx(SfxType.UpgradeFoilSuccess);
                 SaveManager.Instance.SaveProfile();
 
                 int nextFoilLevel = Profile.GetFoilLevel(selectedCard.Id);
@@ -1016,6 +1060,9 @@ namespace CometaChampions.Runtime.UI
                     cardView3D.ApplyFoilLevel(nextFoilLevel);
                 }
 
+                UpdateCardVfxTheme(selectedCard, nextFoilLevel);
+                TriggerCardVfxBurst(32);
+
                 UpdateCurrencyDisplay();
                 UpdateFoilProgressUI(selectedCard);
 
@@ -1027,6 +1074,7 @@ namespace CometaChampions.Runtime.UI
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.UpgradeFoilFail);
                 Debug.LogWarning($"[Home] Cannot upgrade foil: {failureReason}");
             }
         }
@@ -1038,11 +1086,13 @@ namespace CometaChampions.Runtime.UI
             bool wasLocked = !Profile.IsCardUnlocked(selectedCard.Id);
             if (Profile.TryCraftCard(selectedCard, out var failureReason))
             {
+                AudioManager.Instance.PlaySfx(SfxType.CraftCardSuccess);
                 SaveManager.Instance.SaveProfile();
 
                 UpdateCurrencyDisplay();
                 RefreshGrid();
                 SelectCard(selectedCard);
+                TriggerCardVfxBurst(24);
 
                 if (wasLocked)
                 {
@@ -1055,6 +1105,7 @@ namespace CometaChampions.Runtime.UI
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.CraftCardFail);
                 Debug.LogWarning($"[Home] No se pudo craftear la carta: {failureReason}");
             }
         }
@@ -1122,6 +1173,7 @@ namespace CometaChampions.Runtime.UI
 
         public void OpenShopModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (shopModalRoot != null) shopModalRoot.SetActive(true);
             if (shopStatusText != null) shopStatusText.text = string.Empty;
             UpdateModalBalance();
@@ -1129,6 +1181,7 @@ namespace CometaChampions.Runtime.UI
 
         public void CloseShopModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (shopModalRoot != null) shopModalRoot.SetActive(false);
         }
 
@@ -1145,6 +1198,7 @@ namespace CometaChampions.Runtime.UI
             if (shopStatusText != null) shopStatusText.text = "Procesando compra...";
             MonetizationService.Instance.BuyCoinPack(packType, (success, message) =>
             {
+                AudioManager.Instance.PlaySfx(success ? SfxType.PurchaseCoins : SfxType.ErrorDenied);
                 if (shopStatusText != null)
                 {
                     shopStatusText.text = success
@@ -1160,6 +1214,7 @@ namespace CometaChampions.Runtime.UI
             if (shopStatusText != null) shopStatusText.text = "Cargando anuncio de Unity Ads...";
             MonetizationService.Instance.ShowRewardedVideo((success, message) =>
             {
+                AudioManager.Instance.PlaySfx(success ? SfxType.WatchAdReward : SfxType.ErrorDenied);
                 if (shopStatusText != null)
                 {
                     shopStatusText.text = success
@@ -1207,6 +1262,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnBackButtonClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             Debug.Log("[Home] Back button clicked.");
         }
 
@@ -1253,11 +1309,13 @@ namespace CometaChampions.Runtime.UI
 
         private void OnFlipCardClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.CardFlip);
             if (card3DViewer != null) card3DViewer.FlipCard180();
         }
 
         private void OnAutoSpinClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             if (card3DViewer != null)
             {
                 card3DViewer.ToggleAutoSpin();
@@ -1267,6 +1325,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnResetFrontClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.CardSnapFront);
             if (card3DViewer != null)
             {
                 card3DViewer.ResetToFront();
@@ -1276,6 +1335,7 @@ namespace CometaChampions.Runtime.UI
 
         public void SetReverso(string reversoId)
         {
+            AudioManager.Instance.PlaySfx(SfxType.ReversoSwap);
             currentReversoId = reversoId;
             if (card3D != null)
             {
@@ -1313,5 +1373,675 @@ namespace CometaChampions.Runtime.UI
                 txt.color = active ? Color.black : Color.white;
             }
         }
+
+        // ============================================================
+        // Settings Panel (Audio Controls: SFX & Music Toggles)
+        // ============================================================
+
+        private void SetupSettingsPanel()
+        {
+            if (settingsButton == null)
+            {
+                var header = transform.Find("HeaderBar");
+                if (header == null) header = transform;
+                var btnObj = new GameObject("SettingsGearButton", typeof(RectTransform));
+                btnObj.transform.SetParent(header, false);
+                var rt = btnObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(1f, 0.5f);
+                rt.anchorMax = new Vector2(1f, 0.5f);
+                rt.pivot = new Vector2(1f, 0.5f);
+                rt.anchoredPosition = new Vector2(-18f, 0f);
+                rt.sizeDelta = new Vector2(54f, 54f);
+
+                var bg = btnObj.AddComponent<Image>();
+                //bg.color = new Color(0.16f, 0.19f, 0.28f, 0.95f);
+                bg.sprite = Resources.Load<Sprite>("UI/SettingsGearIcon");
+
+                settingsButton = btnObj.AddComponent<Button>();
+
+                // var lblObj = new GameObject("Label", typeof(RectTransform));
+                // lblObj.transform.SetParent(btnObj.transform, false);
+                // var lrt = lblObj.GetComponent<RectTransform>();
+                // lrt.anchorMin = Vector2.zero;
+                // lrt.anchorMax = Vector2.one;
+                // lrt.sizeDelta = Vector2.zero;
+                // var tmp = lblObj.AddComponent<TextMeshProUGUI>();
+                // tmp.text = "⚙";
+                // tmp.fontSize = 24f;
+                // tmp.alignment = TextAlignmentOptions.Center;
+                // tmp.color = new Color(1f, 0.85f, 0.3f);
+            }
+
+            if (settingsPanelRoot == null)
+            {
+                settingsPanelRoot = new GameObject("SettingsModalRoot", typeof(RectTransform));
+                settingsPanelRoot.transform.SetParent(transform, false);
+                var rootRt = settingsPanelRoot.GetComponent<RectTransform>();
+                rootRt.anchorMin = Vector2.zero;
+                rootRt.anchorMax = Vector2.one;
+                rootRt.sizeDelta = Vector2.zero;
+
+                var backdrop = settingsPanelRoot.AddComponent<Image>();
+                backdrop.color = new Color(0.02f, 0.03f, 0.06f, 0.82f);
+
+                var cardObj = new GameObject("SettingsDialog", typeof(RectTransform));
+                cardObj.transform.SetParent(settingsPanelRoot.transform, false);
+                var cardRt = cardObj.GetComponent<RectTransform>();
+                cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+                cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+                cardRt.pivot = new Vector2(0.5f, 0.5f);
+                cardRt.sizeDelta = new Vector2(420f, 300f);
+
+                var cardImg = cardObj.AddComponent<Image>();
+                cardImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
+
+                var titleObj = new GameObject("Title", typeof(RectTransform));
+                titleObj.transform.SetParent(cardObj.transform, false);
+                var trt = titleObj.GetComponent<RectTransform>();
+                trt.anchorMin = new Vector2(0f, 1f);
+                trt.anchorMax = new Vector2(1f, 1f);
+                trt.pivot = new Vector2(0.5f, 1f);
+                trt.anchoredPosition = new Vector2(0f, -18f);
+                trt.sizeDelta = new Vector2(-40f, 40f);
+                var titleTmp = titleObj.AddComponent<TextMeshProUGUI>();
+                titleTmp.text = "CONFIGURACIÓN DE AUDIO";
+                titleTmp.fontSize = 22f;
+                titleTmp.fontStyle = FontStyles.Bold;
+                titleTmp.alignment = TextAlignmentOptions.Center;
+                titleTmp.color = new Color(1f, 0.84f, 0.25f);
+
+                // SFX Toggle Button
+                var sfxBtnObj = new GameObject("SfxToggleButton", typeof(RectTransform));
+                sfxBtnObj.transform.SetParent(cardObj.transform, false);
+                var sfxRt = sfxBtnObj.GetComponent<RectTransform>();
+                sfxRt.anchorMin = new Vector2(0.5f, 0.5f);
+                sfxRt.anchorMax = new Vector2(0.5f, 0.5f);
+                sfxRt.pivot = new Vector2(0.5f, 0.5f);
+                sfxRt.anchoredPosition = new Vector2(0f, 25f);
+                sfxRt.sizeDelta = new Vector2(320f, 52f);
+                var sfxBg = sfxBtnObj.AddComponent<Image>();
+                sfxBg.color = new Color(0.16f, 0.45f, 0.28f, 0.95f);
+                sfxToggleButton = sfxBtnObj.AddComponent<Button>();
+
+                var sfxLblObj = new GameObject("SfxLabel", typeof(RectTransform));
+                sfxLblObj.transform.SetParent(sfxBtnObj.transform, false);
+                var sfxLrt = sfxLblObj.GetComponent<RectTransform>();
+                sfxLrt.anchorMin = Vector2.zero;
+                sfxLrt.anchorMax = Vector2.one;
+                sfxLrt.sizeDelta = Vector2.zero;
+                sfxToggleLabel = sfxLblObj.AddComponent<TextMeshProUGUI>();
+                sfxToggleLabel.fontSize = 18f;
+                sfxToggleLabel.fontStyle = FontStyles.Bold;
+                sfxToggleLabel.alignment = TextAlignmentOptions.Center;
+                sfxToggleLabel.color = Color.white;
+
+                // Music Toggle Button
+                var musBtnObj = new GameObject("MusicToggleButton", typeof(RectTransform));
+                musBtnObj.transform.SetParent(cardObj.transform, false);
+                var musRt = musBtnObj.GetComponent<RectTransform>();
+                musRt.anchorMin = new Vector2(0.5f, 0.5f);
+                musRt.anchorMax = new Vector2(0.5f, 0.5f);
+                musRt.pivot = new Vector2(0.5f, 0.5f);
+                musRt.anchoredPosition = new Vector2(0f, -40f);
+                musRt.sizeDelta = new Vector2(320f, 52f);
+                var musBg = musBtnObj.AddComponent<Image>();
+                musBg.color = new Color(0.16f, 0.45f, 0.28f, 0.95f);
+                musicToggleButton = musBtnObj.AddComponent<Button>();
+
+                var musLblObj = new GameObject("MusicLabel", typeof(RectTransform));
+                musLblObj.transform.SetParent(musBtnObj.transform, false);
+                var musLrt = musLblObj.GetComponent<RectTransform>();
+                musLrt.anchorMin = Vector2.zero;
+                musLrt.anchorMax = Vector2.one;
+                musLrt.sizeDelta = Vector2.zero;
+                musicToggleLabel = musLblObj.AddComponent<TextMeshProUGUI>();
+                musicToggleLabel.fontSize = 18f;
+                musicToggleLabel.fontStyle = FontStyles.Bold;
+                musicToggleLabel.alignment = TextAlignmentOptions.Center;
+                musicToggleLabel.color = Color.white;
+
+                // Close Button
+                var closeObj = new GameObject("CloseSettingsButton", typeof(RectTransform));
+                closeObj.transform.SetParent(cardObj.transform, false);
+                var crt = closeObj.GetComponent<RectTransform>();
+                crt.anchorMin = new Vector2(0.5f, 0f);
+                crt.anchorMax = new Vector2(0.5f, 0f);
+                crt.pivot = new Vector2(0.5f, 0f);
+                crt.anchoredPosition = new Vector2(0f, 18f);
+                crt.sizeDelta = new Vector2(180f, 42f);
+                var closeBg = closeObj.AddComponent<Image>();
+                closeBg.color = new Color(0.24f, 0.26f, 0.35f, 0.95f);
+                closeSettingsButton = closeObj.AddComponent<Button>();
+
+                var closeLblObj = new GameObject("CloseLabel", typeof(RectTransform));
+                closeLblObj.transform.SetParent(closeObj.transform, false);
+                var clrt = closeLblObj.GetComponent<RectTransform>();
+                clrt.anchorMin = Vector2.zero;
+                clrt.anchorMax = Vector2.one;
+                clrt.sizeDelta = Vector2.zero;
+                var closeTmp = closeLblObj.AddComponent<TextMeshProUGUI>();
+                closeTmp.text = "CERRAR";
+                closeTmp.fontSize = 16f;
+                closeTmp.fontStyle = FontStyles.Bold;
+                closeTmp.alignment = TextAlignmentOptions.Center;
+                closeTmp.color = Color.white;
+            }
+
+            if (settingsButton != null)
+            {
+                settingsButton.onClick.RemoveAllListeners();
+                settingsButton.onClick.AddListener(OpenSettingsPanel);
+            }
+
+            if (closeSettingsButton != null)
+            {
+                closeSettingsButton.onClick.RemoveAllListeners();
+                closeSettingsButton.onClick.AddListener(CloseSettingsPanel);
+            }
+
+            if (sfxToggleButton != null)
+            {
+                sfxToggleButton.onClick.RemoveAllListeners();
+                sfxToggleButton.onClick.AddListener(ToggleSfx);
+            }
+
+            if (musicToggleButton != null)
+            {
+                musicToggleButton.onClick.RemoveAllListeners();
+                musicToggleButton.onClick.AddListener(ToggleMusic);
+            }
+
+            if (settingsPanelRoot != null)
+            {
+                settingsPanelRoot.SetActive(false);
+            }
+
+            RefreshSettingsLabels();
+        }
+
+        public void OpenSettingsPanel()
+        {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
+            RefreshSettingsLabels();
+            if (settingsPanelRoot != null)
+            {
+                settingsPanelRoot.transform.SetAsLastSibling();
+                settingsPanelRoot.SetActive(true);
+            }
+        }
+
+        public void CloseSettingsPanel()
+        {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
+            if (settingsPanelRoot != null)
+            {
+                settingsPanelRoot.SetActive(false);
+            }
+        }
+
+        private void ToggleSfx()
+        {
+            bool next = !AudioManager.Instance.IsSfxEnabled;
+            AudioManager.Instance.IsSfxEnabled = next;
+            if (next)
+            {
+                AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+            }
+            RefreshSettingsLabels();
+        }
+
+        private void ToggleMusic()
+        {
+            AudioManager.Instance.IsMusicEnabled = !AudioManager.Instance.IsMusicEnabled;
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+            RefreshSettingsLabels();
+        }
+
+        private void RefreshSettingsLabels()
+        {
+            bool sfxOn = AudioManager.Instance.IsSfxEnabled;
+            bool musicOn = AudioManager.Instance.IsMusicEnabled;
+
+            if (sfxToggleLabel != null)
+            {
+                sfxToggleLabel.text = sfxOn ? "EFECTOS (SFX): ENCENDIDO" : "EFECTOS (SFX): APAGADO";
+            }
+            if (sfxToggleButton != null)
+            {
+                var img = sfxToggleButton.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = sfxOn ? new Color(0.16f, 0.52f, 0.28f, 0.95f) : new Color(0.42f, 0.16f, 0.18f, 0.95f);
+                }
+            }
+
+            if (musicToggleLabel != null)
+            {
+                musicToggleLabel.text = musicOn ? "MÚSICA (BGM): ENCENDIDO" : "MÚSICA (BGM): APAGADO";
+            }
+            if (musicToggleButton != null)
+            {
+                var img = musicToggleButton.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = musicOn ? new Color(0.16f, 0.52f, 0.28f, 0.95f) : new Color(0.42f, 0.16f, 0.18f, 0.95f);
+                }
+            }
+        }
+
+        // ============================================================
+        // Card Viewport VFX (Rotating Vortex & Aura Particles)
+        // ============================================================
+
+        private void SetupCardViewportVfx(Transform viewportTransform)
+        {
+            if (viewportTransform == null) return;
+
+            var existingAnchor = GameObject.Find("Center_Card3D_VFX_Anchor");
+            if (existingAnchor != null)
+            {
+                cardVfxAnchor = existingAnchor;
+            }
+            else
+            {
+                cardVfxAnchor = new GameObject("Center_Card3D_VFX_Anchor");
+            }
+
+            // Position slightly behind the 3D card (Z = -4.5 -> -4.05) and in front of Background_Canvas
+            cardVfxAnchor.transform.position = viewportTransform.position + new Vector3(0f, 0f, 0.45f);
+            cardVfxAnchor.transform.rotation = Quaternion.identity;
+
+            var mat = GetOrCreateParticleMaterial();
+
+            // 1. Rotating Vortex Swirl Ring (Stretched comet streaks orbiting the card perimeter)
+            var swirlTrans = cardVfxAnchor.transform.Find("CardVortexSwirl_Particles");
+            GameObject swirlObj;
+            if (swirlTrans != null)
+            {
+                swirlObj = swirlTrans.gameObject;
+            }
+            else
+            {
+                swirlObj = new GameObject("CardVortexSwirl_Particles");
+                swirlObj.transform.SetParent(cardVfxAnchor.transform, false);
+            }
+            swirlObj.transform.localPosition = Vector3.zero;
+
+            cardVortexSwirlPs = swirlObj.GetComponent<ParticleSystem>();
+            if (cardVortexSwirlPs == null)
+            {
+                cardVortexSwirlPs = swirlObj.AddComponent<ParticleSystem>();
+            }
+            ConfigureVortexSwirlParticles(cardVortexSwirlPs, mat);
+
+            // 2. Counter-Rotating Floating Aura Orbs (Soft glowing energy motes around the card)
+            var orbsTrans = cardVfxAnchor.transform.Find("CardAuraOrbs_Particles");
+            GameObject orbsObj;
+            if (orbsTrans != null)
+            {
+                orbsObj = orbsTrans.gameObject;
+            }
+            else
+            {
+                orbsObj = new GameObject("CardAuraOrbs_Particles");
+                orbsObj.transform.SetParent(cardVfxAnchor.transform, false);
+            }
+            orbsObj.transform.localPosition = new Vector3(0f, 0f, 0.15f);
+
+            cardAuraOrbsPs = orbsObj.GetComponent<ParticleSystem>();
+            if (cardAuraOrbsPs == null)
+            {
+                cardAuraOrbsPs = orbsObj.AddComponent<ParticleSystem>();
+            }
+            ConfigureAuraOrbsParticles(cardAuraOrbsPs, mat);
+
+            // 3. Pedestal Rising Energy Sparks (Spiraling upward from the pedestal base)
+            var sparksTrans = cardVfxAnchor.transform.Find("PedestalRisingSparks_Particles");
+            GameObject sparksObj;
+            if (sparksTrans != null)
+            {
+                sparksObj = sparksTrans.gameObject;
+            }
+            else
+            {
+                sparksObj = new GameObject("PedestalRisingSparks_Particles");
+                sparksObj.transform.SetParent(cardVfxAnchor.transform, false);
+            }
+            sparksObj.transform.localPosition = new Vector3(0f, -1.85f, 0.10f);
+
+            pedestalSparksPs = sparksObj.GetComponent<ParticleSystem>();
+            if (pedestalSparksPs == null)
+            {
+                pedestalSparksPs = sparksObj.AddComponent<ParticleSystem>();
+            }
+            ConfigurePedestalSparksParticles(pedestalSparksPs, mat);
+        }
+
+        private static void ConfigureVortexSwirlParticles(ParticleSystem ps, Material mat)
+        {
+            var main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.22f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.28f);
+            main.maxParticles = 140;
+
+            var emission = ps.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 38f;
+
+            var shape = ps.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 2.05f;
+            shape.radiusThickness = 0.30f;
+
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.Local;
+            vel.x = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalX = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalY = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalZ = new ParticleSystem.MinMaxCurve(1.25f, 1.65f);
+            vel.radial = new ParticleSystem.MinMaxCurve(-0.20f, 0.08f);
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            var curve = new AnimationCurve(
+                new Keyframe(0f, 0.15f),
+                new Keyframe(0.25f, 1.0f),
+                new Keyframe(0.75f, 0.85f),
+                new Keyframe(1f, 0f));
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, curve);
+
+            ApplyColorGradient(ps, new Color(0.20f, 0.68f, 1.0f), new Color(1.0f, 0.84f, 0.28f), 0.78f);
+
+            var psRenderer = ps.GetComponent<ParticleSystemRenderer>();
+            if (psRenderer != null)
+            {
+                psRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+                psRenderer.velocityScale = 0.08f;
+                psRenderer.lengthScale = 2.3f;
+                psRenderer.sortingOrder = -10;
+                if (mat != null) psRenderer.sharedMaterial = mat;
+            }
+
+            if (!ps.isPlaying) ps.Play();
+        }
+
+        private static void ConfigureAuraOrbsParticles(ParticleSystem ps, Material mat)
+        {
+            var main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.2f, 3.4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.04f, 0.14f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.22f, 0.48f);
+            main.maxParticles = 80;
+
+            var emission = ps.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 18f;
+
+            var shape = ps.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 2.35f;
+            shape.radiusThickness = 0.45f;
+
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.Local;
+            vel.x = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalX = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalY = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalZ = new ParticleSystem.MinMaxCurve(-0.85f, -0.45f);
+            vel.radial = new ParticleSystem.MinMaxCurve(-0.10f, 0.12f);
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            var curve = new AnimationCurve(
+                new Keyframe(0f, 0.0f),
+                new Keyframe(0.35f, 1.0f),
+                new Keyframe(0.70f, 0.9f),
+                new Keyframe(1f, 0.0f));
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, curve);
+
+            ApplyColorGradient(ps, new Color(1.0f, 0.85f, 0.32f), new Color(0.25f, 0.78f, 1.0f), 0.55f);
+
+            var psRenderer = ps.GetComponent<ParticleSystemRenderer>();
+            if (psRenderer != null)
+            {
+                psRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+                psRenderer.sortingOrder = -12;
+                if (mat != null) psRenderer.sharedMaterial = mat;
+            }
+
+            if (!ps.isPlaying) ps.Play();
+        }
+
+        private static void ConfigurePedestalSparksParticles(ParticleSystem ps, Material mat)
+        {
+            var main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.8f, 2.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.15f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.20f);
+            main.maxParticles = 60;
+
+            var emission = ps.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 16f;
+
+            var shape = ps.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1.75f;
+            shape.radiusThickness = 0.65f;
+            shape.rotation = new Vector3(90f, 0f, 0f);
+
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.Local;
+            vel.x = new ParticleSystem.MinMaxCurve(-0.12f, 0.12f);
+            vel.y = new ParticleSystem.MinMaxCurve(0.55f, 1.15f);
+            vel.z = new ParticleSystem.MinMaxCurve(-0.10f, 0.10f);
+            vel.orbitalX = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.orbitalY = new ParticleSystem.MinMaxCurve(0.65f, 1.15f);
+            vel.orbitalZ = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.radial = new ParticleSystem.MinMaxCurve(0f, 0f);
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            var curve = new AnimationCurve(
+                new Keyframe(0f, 0.2f),
+                new Keyframe(0.25f, 1.0f),
+                new Keyframe(1f, 0.0f));
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, curve);
+
+            ApplyColorGradient(ps, new Color(1.0f, 0.86f, 0.35f), new Color(0.30f, 0.85f, 1.0f), 0.72f);
+
+            var psRenderer = ps.GetComponent<ParticleSystemRenderer>();
+            if (psRenderer != null)
+            {
+                psRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+                psRenderer.sortingOrder = -11;
+                if (mat != null) psRenderer.sharedMaterial = mat;
+            }
+
+            if (!ps.isPlaying) ps.Play();
+        }
+
+        private void UpdateCardViewportVfxRotation()
+        {
+            if (cardVfxAnchor != null && cardViewportTransform != null)
+            {
+                cardVfxAnchor.transform.position = cardViewportTransform.position + new Vector3(0f, 0f, 0.45f);
+            }
+
+            float dt = Time.deltaTime;
+            if (cardVortexSwirlPs != null)
+            {
+                cardVortexSwirlPs.transform.Rotate(0f, 0f, -28f * dt, Space.Self);
+            }
+
+            if (cardAuraOrbsPs != null)
+            {
+                cardAuraOrbsPs.transform.Rotate(0f, 0f, 16f * dt, Space.Self);
+            }
+        }
+
+        private void UpdateCardVfxTheme(CardDefinition card, int foilLevel)
+        {
+            if (card == null) return;
+
+            Color primaryClanColor = card.Clan switch
+            {
+                ClanType.Milenarios => new Color(0.18f, 0.62f, 1.00f),
+                ClanType.Fugitivos => new Color(0.32f, 0.92f, 0.28f),
+                ClanType.Depredadores => new Color(1.00f, 0.42f, 0.10f),
+                ClanType.Miticos => new Color(0.88f, 0.30f, 0.98f),
+                _ => new Color(0.25f, 0.75f, 1.00f)
+            };
+
+            Color goldHighlight = new Color(1.00f, 0.85f, 0.30f);
+            float foilBoost = 1f + Mathf.Clamp(foilLevel - 1, 0, 3) * 0.25f;
+
+            if (cardVortexSwirlPs != null)
+            {
+                ApplyColorGradient(cardVortexSwirlPs, primaryClanColor, goldHighlight, 0.80f);
+                var emission = cardVortexSwirlPs.emission;
+                emission.rateOverTime = 38f * foilBoost;
+            }
+
+            if (cardAuraOrbsPs != null)
+            {
+                ApplyColorGradient(cardAuraOrbsPs, goldHighlight, primaryClanColor, 0.58f);
+                var emission = cardAuraOrbsPs.emission;
+                emission.rateOverTime = 18f * foilBoost;
+            }
+
+            if (pedestalSparksPs != null)
+            {
+                ApplyColorGradient(pedestalSparksPs, goldHighlight, primaryClanColor, 0.75f);
+                var emission = pedestalSparksPs.emission;
+                emission.rateOverTime = 16f * foilBoost;
+            }
+        }
+
+        private void TriggerCardVfxBurst(int count)
+        {
+            if (cardVortexSwirlPs != null)
+            {
+                cardVortexSwirlPs.Emit(count);
+            }
+            if (cardAuraOrbsPs != null)
+            {
+                cardAuraOrbsPs.Emit(count / 2);
+            }
+            if (pedestalSparksPs != null)
+            {
+                pedestalSparksPs.Emit(count / 2);
+            }
+        }
+
+        private static void ApplyColorGradient(ParticleSystem ps, Color startColor, Color endColor, float peakAlpha)
+        {
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var grad = new Gradient();
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(startColor, 0f),
+                    new GradientColorKey(Color.Lerp(startColor, endColor, 0.5f), 0.5f),
+                    new GradientColorKey(endColor, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0f, 0f),
+                    new GradientAlphaKey(peakAlpha, 0.22f),
+                    new GradientAlphaKey(peakAlpha * 0.85f, 0.75f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            col.color = new ParticleSystem.MinMaxGradient(grad);
+        }
+
+        private static Material GetOrCreateParticleMaterial()
+        {
+            if (cachedParticleMaterial != null)
+            {
+                return cachedParticleMaterial;
+            }
+
+            if (cachedParticleTexture == null)
+            {
+                const int size = 64;
+                cachedParticleTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                {
+                    name = "ProceduralParticleGlow",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear
+                };
+
+                float center = (size - 1) * 0.5f;
+                var pixels = new Color[size * size];
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dx = (x - center) / center;
+                        float dy = (y - center) / center;
+                        float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                        float t = Mathf.Clamp01(1f - dist);
+                        float alpha = Mathf.Pow(t, 2.4f);
+                        float core = Mathf.Pow(t, 5.0f);
+                        float brightness = Mathf.Clamp01(0.75f + core * 0.25f);
+                        pixels[y * size + x] = new Color(brightness, brightness, brightness, alpha);
+                    }
+                }
+                cachedParticleTexture.SetPixels(pixels);
+                cachedParticleTexture.Apply();
+            }
+
+            Shader shader = null;
+            if (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            }
+            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Additive");
+            if (shader == null) shader = Shader.Find("Mobile/Particles/Additive");
+            if (shader == null) shader = Shader.Find("Particles/Standard Unlit");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+
+            if (shader == null) return null;
+
+            cachedParticleMaterial = new Material(shader)
+            {
+                name = "CardViewportVfxMaterial",
+                mainTexture = cachedParticleTexture
+            };
+
+            if (cachedParticleMaterial.HasProperty("_BaseMap"))
+            {
+                cachedParticleMaterial.SetTexture("_BaseMap", cachedParticleTexture);
+            }
+            if (cachedParticleMaterial.HasProperty("_MainTex"))
+            {
+                cachedParticleMaterial.SetTexture("_MainTex", cachedParticleTexture);
+            }
+
+            return cachedParticleMaterial;
+        }
     }
 }
+

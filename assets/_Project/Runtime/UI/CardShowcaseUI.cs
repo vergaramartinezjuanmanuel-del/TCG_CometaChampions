@@ -5,8 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Cards;
+using CometaChampions.Runtime.Services;
 
 namespace CometaChampions.Runtime.UI
 {
@@ -105,6 +107,7 @@ namespace CometaChampions.Runtime.UI
             SelectCategory("all");
             SelectReverso("oro");
             SelectFoil(1);
+            AudioManager.Instance.PlayBgm(BgmType.Showcase);
         }
 
         private void Update()
@@ -152,6 +155,7 @@ namespace CometaChampions.Runtime.UI
 
         public void SelectCategory(string category)
         {
+            AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             currentCategory = category;
             activeCardList = CardShowcaseCatalog.GetCardsByCategory(category).ToList();
             currentCardIndex = 0;
@@ -161,6 +165,7 @@ namespace CometaChampions.Runtime.UI
 
         public void SelectReverso(string reversoId)
         {
+            AudioManager.Instance.PlaySfx(SfxType.ReversoSwap);
             currentReverso = reversoId;
             if (card3D != null)
             {
@@ -171,6 +176,7 @@ namespace CometaChampions.Runtime.UI
 
         public void SelectFoil(int level)
         {
+            AudioManager.Instance.PlaySfx(SfxType.FoilShaderChange);
             currentFoilLevel = level;
             if (card3D != null)
             {
@@ -182,6 +188,7 @@ namespace CometaChampions.Runtime.UI
         public void ShowNextCard()
         {
             if (activeCardList == null || activeCardList.Count == 0) return;
+            AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             currentCardIndex = (currentCardIndex + 1) % activeCardList.Count;
             DisplayCurrentCard();
         }
@@ -189,6 +196,7 @@ namespace CometaChampions.Runtime.UI
         public void ShowPreviousCard()
         {
             if (activeCardList == null || activeCardList.Count == 0) return;
+            AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             currentCardIndex = (currentCardIndex - 1 + activeCardList.Count) % activeCardList.Count;
             DisplayCurrentCard();
         }
@@ -196,6 +204,7 @@ namespace CometaChampions.Runtime.UI
         public void ShowRandomCard()
         {
             if (activeCardList == null || activeCardList.Count <= 1) return;
+            AudioManager.Instance.PlaySfx(SfxType.CardGridSelect);
             int nextIdx;
             do
             {
@@ -291,6 +300,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnFlipClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.CardFlip);
             if (cardViewer != null)
             {
                 cardViewer.FlipCard180();
@@ -299,6 +309,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnAutoSpinClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             if (cardViewer != null)
             {
                 cardViewer.ToggleAutoSpin();
@@ -308,6 +319,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnResetFrontClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.CardSnapFront);
             if (cardViewer != null)
             {
                 cardViewer.ResetToFront();
@@ -364,6 +376,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnBackClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             // Return to Home scene
             SceneManager.LoadScene("Home");
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Services;
 using CometaChampions.Runtime.Cards;
@@ -84,6 +85,7 @@ namespace CometaChampions.Runtime.UI
 
         public void OpenModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             if (modalRoot != null) modalRoot.SetActive(true);
             if (revealDialogRoot != null) revealDialogRoot.SetActive(false);
 
@@ -93,6 +95,7 @@ namespace CometaChampions.Runtime.UI
 
         public void CloseModal()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (modalRoot != null) modalRoot.SetActive(false);
             if (revealDialogRoot != null) revealDialogRoot.SetActive(false);
             ClearRevealContainer();
@@ -100,6 +103,7 @@ namespace CometaChampions.Runtime.UI
 
         private void CloseRevealDialog()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (revealDialogRoot != null) revealDialogRoot.SetActive(false);
             ClearRevealContainer();
             RefreshCalendarUI();
@@ -417,6 +421,7 @@ namespace CometaChampions.Runtime.UI
 
             try
             {
+                AudioManager.Instance.PlaySfx(SfxType.DailyRewardClaim);
                 var result = Profile.ClaimDailyReward(now);
                 SaveManager.Instance.SaveProfile();
 
@@ -438,6 +443,7 @@ namespace CometaChampions.Runtime.UI
         private void ShowRewardReveal(DailyRewardResult result)
         {
             ClearRevealContainer();
+            AudioManager.Instance.PlaySfx(SfxType.DailyRewardItemReveal);
 
             if (revealDialogRoot != null)
             {

@@ -3,6 +3,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Services;
 
@@ -112,6 +113,7 @@ namespace CometaChampions.Runtime.UI
 
         public void Show(Action? onInventoryUpdated = null)
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             onInventoryUpdatedCallback = onInventoryUpdated;
             customPackQuantity = 1;
 
@@ -130,6 +132,7 @@ namespace CometaChampions.Runtime.UI
 
         public void Hide()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             if (modalRoot != null)
             {
                 modalRoot.SetActive(false);
@@ -210,6 +213,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnDecreaseQtyClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             if (customPackQuantity > 1)
             {
                 customPackQuantity--;
@@ -219,6 +223,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnIncreaseQtyClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             var profile = Profile;
             int maxAffordable = profile != null ? profile.GoldCoins / PlayerProfile.PackGoldCost : 10;
             if (maxAffordable <= 0) maxAffordable = 1;
@@ -232,6 +237,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnMaxQtyClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             var profile = Profile;
             int maxAffordable = profile != null ? profile.GoldCoins / PlayerProfile.PackGoldCost : 1;
             customPackQuantity = Math.Max(1, maxAffordable);
@@ -245,12 +251,15 @@ namespace CometaChampions.Runtime.UI
 
             if (!profile.TryPurchaseCardPacks(count, out var result, out string failureReason))
             {
+                AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
                 if (statusMessageText != null)
                 {
                     statusMessageText.text = $"<color=#FF5555>{failureReason}</color>";
                 }
                 return;
             }
+
+            AudioManager.Instance.PlaySfx(SfxType.PurchaseCoins);
 
             // Persist save immediately (Rule 12)
             SaveManager.Save();

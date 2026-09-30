@@ -27,6 +27,8 @@ namespace CometaChampions.Runtime.Battle
         public bool CanUndo { get; private set; }
 
         private Action<int, int> onSlotClicked;
+        private bool wasFaceDown;
+        private int lastPower = -1;
 
         private void Awake()
         {
@@ -55,6 +57,7 @@ namespace CometaChampions.Runtime.Battle
             Action<int, int> onClickCallback,
             bool isFaceDown = false)
         {
+            var prevCard = CurrentCard;
             CurrentCard = card;
             LaneIndex = laneIndex;
             SlotIndex = slotIndex;
@@ -63,6 +66,8 @@ namespace CometaChampions.Runtime.Battle
 
             if (card == null)
             {
+                wasFaceDown = false;
+                lastPower = -1;
                 // Empty slot appearance
                 if (cardThumbnail != null)
                 {
@@ -83,6 +88,12 @@ namespace CometaChampions.Runtime.Battle
             }
             else if (isFaceDown)
             {
+                if (prevCard == null && !wasFaceDown)
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ArenaCardFacedown);
+                }
+                wasFaceDown = true;
+
                 // Unrevealed / Face-down opponent card (Rule 17)
                 if (cardThumbnail != null)
                 {
@@ -114,6 +125,17 @@ namespace CometaChampions.Runtime.Battle
             }
             else
             {
+                if (wasFaceDown)
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ArenaCardReveal);
+                    wasFaceDown = false;
+                }
+                if (lastPower != -1 && lastPower != effectivePower)
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.LanePowerTick);
+                }
+                lastPower = effectivePower;
+
                 // Occupied slot appearance (revealed)
                 if (cardThumbnail != null)
                 {

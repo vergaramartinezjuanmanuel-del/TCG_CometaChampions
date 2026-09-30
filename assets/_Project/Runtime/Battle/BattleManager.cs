@@ -89,6 +89,7 @@ namespace CometaChampions.Runtime.Battle
 
             // 0. Arena Background: Randomly select one of the 6 official backgrounds
             SetupRandomArenaBackground(rng);
+            AudioManager.Instance.PlayBgm(AudioManager.GetBattleBgm(CurrentArenaBackgroundName));
 
             // 1. Arenas: 3 Arenas from MVP pool (Rule 15 & 24)
             var mvpArenas = MvpCardCatalog.GetMvpArenas();
@@ -100,6 +101,7 @@ namespace CometaChampions.Runtime.Battle
 
             // 3. Create Match (draws 4 starting cards each - Rule 2)
             MatchState = ArenaBattleEngine.CreateMatch(pDeck, aiDeck, selectedArenas, rng);
+            AudioManager.Instance.PlaySfx(SfxType.CardDealMulti);
 
             // Initialize arenas in lane views
             for (int i = 0; i < laneViews.Length; i++)
@@ -188,6 +190,8 @@ namespace CometaChampions.Runtime.Battle
 
             // Complete mulligan, draw Turn 1 card (Hand = 5), and plan AI turn (Rule 17 & 22)
             ArenaBattleEngine.CompleteMulligan(MatchState, rng);
+            AudioManager.Instance.PlaySfx(SfxType.TurnStartBell);
+            AudioManager.Instance.PlaySfx(SfxType.CardDealSingle);
 
             RefreshAllUI();
         }
@@ -254,6 +258,7 @@ namespace CometaChampions.Runtime.Battle
             if (MatchState.SelectedHandIndex.HasValue && MatchState.SelectedHandIndex.Value == handIndex)
             {
                 MatchState.SelectedHandIndex = null; // Toggle deselect
+                AudioManager.Instance.PlaySfx(SfxType.CardHandDeselect);
                 if (headerView != null)
                 {
                     headerView.SetStatusNotification("Toca una carta en tu mano para seleccionarla.", new Color(0.8f, 0.85f, 0.9f));
@@ -262,21 +267,27 @@ namespace CometaChampions.Runtime.Battle
             else
             {
                 MatchState.SelectedHandIndex = handIndex;
-                if (headerView != null && handIndex >= 0 && handIndex < MatchState.PlayerHand.Count)
+                if (handIndex >= 0 && handIndex < MatchState.PlayerHand.Count)
                 {
                     var card = MatchState.PlayerHand[handIndex];
-                    string typeBadge = $"[{card.Type.ToString().ToUpper()}]";
-                    string abilityPreview = !string.IsNullOrEmpty(card.Ability?.Description) 
-                        ? $"— <i>{card.Ability.Description}</i>" 
-                        : "";
+                    bool canAfford = MatchState.PlayerEnergy >= card.EnergyCost;
+                    AudioManager.Instance.PlaySfx(canAfford ? SfxType.CardHandSelect : SfxType.ErrorDenied);
 
-                    if (MatchState.PlayerEnergy >= card.EnergyCost)
+                    if (headerView != null)
                     {
-                        headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} (Costo: {card.EnergyCost} | Poder: {card.Power}) {abilityPreview}", new Color(0.35f, 0.95f, 0.45f));
-                    }
-                    else
-                    {
-                        headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} requiere {card.EnergyCost} Energía (Disponibles: {MatchState.PlayerEnergy}) {abilityPreview}", new Color(1f, 0.65f, 0.25f));
+                        string typeBadge = $"[{card.Type.ToString().ToUpper()}]";
+                        string abilityPreview = !string.IsNullOrEmpty(card.Ability?.Description) 
+                            ? $"— <i>{card.Ability.Description}</i>" 
+                            : "";
+
+                        if (canAfford)
+                        {
+                            headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} (Costo: {card.EnergyCost} | Poder: {card.Power}) {abilityPreview}", new Color(0.35f, 0.95f, 0.45f));
+                        }
+                        else
+                        {
+                            headerView.SetStatusNotification($"<b>{card.Name}</b> {typeBadge} requiere {card.EnergyCost} Energía (Disponibles: {MatchState.PlayerEnergy}) {abilityPreview}", new Color(1f, 0.65f, 0.25f));
+                        }
                     }
                 }
             }
@@ -295,6 +306,7 @@ namespace CometaChampions.Runtime.Battle
                 bool success = ArenaBattleEngine.PlayPlayerCard(MatchState, hIdx, laneIndex, out string error);
                 if (!success && !string.IsNullOrEmpty(error))
                 {
+                    AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
                     if (headerView != null)
                     {
                         headerView.SetStatusNotification($"{error}", new Color(1f, 0.4f, 0.4f));
@@ -302,6 +314,8 @@ namespace CometaChampions.Runtime.Battle
                 }
                 else if (success)
                 {
+                    AudioManager.Instance.PlaySfx(SfxType.CardDeploySlam);
+                    AudioManager.Instance.PlaySfx(SfxType.EnergySpend);
                     if (headerView != null)
                     {
                         headerView.SetStatusNotification($"¡<b>{card?.Name}</b> desplegada! Te quedan {MatchState.PlayerEnergy} de energía. Puedes jugar otra o finalizar turno.", new Color(0.35f, 0.95f, 0.45f));
@@ -311,6 +325,7 @@ namespace CometaChampions.Runtime.Battle
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
                 if (headerView != null)
                 {
                     headerView.SetStatusNotification("Primero toca una carta en tu mano y luego selecciona la arena donde desplegarla.", new Color(1f, 0.85f, 0.3f));
@@ -325,6 +340,8 @@ namespace CometaChampions.Runtime.Battle
             bool success = ArenaBattleEngine.UndoPlayerPlay(MatchState, laneIndex, slotIndex);
             if (success)
             {
+                AudioManager.Instance.PlaySfx(SfxType.CardUndoRecall);
+                AudioManager.Instance.PlaySfx(SfxType.EnergyRefund);
                 if (headerView != null)
                 {
                     headerView.SetStatusNotification($"Carta recuperada a tu mano. Energía reembolsada ({MatchState.PlayerEnergy} disponible).", new Color(1f, 0.85f, 0.3f));
@@ -337,6 +354,7 @@ namespace CometaChampions.Runtime.Battle
         {
             if (MatchState == null || MatchState.IsGameOver || MatchState.IsMulliganPhase || isResolvingTurn) return;
 
+            AudioManager.Instance.PlaySfx(SfxType.TurnEndCommit);
             StartCoroutine(ResolveTurnSequenceCoroutine());
         }
 
@@ -353,12 +371,18 @@ namespace CometaChampions.Runtime.Battle
             }
 
             // Step 1: Reveal opponent cards
+            bool anyRevealed = false;
             for (int l = 0; l < ArenaBattleMatchState.MaxLanes; l++)
             {
                 foreach (var aiCard in MatchState.AiLaneCards[l])
                 {
+                    if (!aiCard.IsRevealed) anyRevealed = true;
                     aiCard.IsRevealed = true;
                 }
+            }
+            if (anyRevealed)
+            {
+                AudioManager.Instance.PlaySfx(SfxType.ArenaCardReveal);
             }
             RefreshAllUI();
             yield return new WaitForSeconds(0.6f);
@@ -395,6 +419,9 @@ namespace CometaChampions.Runtime.Battle
             }
             else
             {
+                AudioManager.Instance.PlaySfx(SfxType.TurnStartBell);
+                AudioManager.Instance.PlaySfx(SfxType.EnergyRefill);
+                AudioManager.Instance.PlaySfx(SfxType.CardDealSingle);
                 if (headerView != null)
                 {
                     headerView.SetEndTurnInteractable(true);
@@ -406,21 +433,25 @@ namespace CometaChampions.Runtime.Battle
 
         private void HandleGameOver()
         {
+            AudioManager.Instance.StopBgm();
             int goldEarned = 0;
             int xpEarned = 0;
 
             switch (MatchState.Winner)
             {
                 case BattleWinner.Player:
+                    AudioManager.Instance.PlaySfx(SfxType.GameOverVictory);
                     goldEarned = 150;
                     xpEarned = 50;
                     break;
                 case BattleWinner.Tie:
+                    AudioManager.Instance.PlaySfx(SfxType.GameOverTie);
                     goldEarned = 75;
                     xpEarned = 25;
                     break;
                 case BattleWinner.Ai:
                 default:
+                    AudioManager.Instance.PlaySfx(SfxType.GameOverDefeat);
                     goldEarned = 35;
                     xpEarned = 10;
                     break;
@@ -459,6 +490,7 @@ namespace CometaChampions.Runtime.Battle
 
         private void HandleReturnHome()
         {
+            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             SceneManager.LoadScene("Home");
         }
 

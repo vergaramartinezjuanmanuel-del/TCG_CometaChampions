@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Cards;
+using CometaChampions.Runtime.Services;
 
 namespace CometaChampions.Runtime.Battle
 {
@@ -78,6 +80,7 @@ namespace CometaChampions.Runtime.Battle
 
         public void Show(IReadOnlyList<CardDefinition> startingHand)
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             StopAllCoroutines();
             isAnimating = false;
             currentHand = startingHand;
@@ -101,6 +104,7 @@ namespace CometaChampions.Runtime.Battle
 
         public void Hide()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             StopAllCoroutines();
             isAnimating = false;
             ResetSlotTransforms();
@@ -144,10 +148,12 @@ namespace CometaChampions.Runtime.Battle
             if (selectedIndices.Contains(index))
             {
                 selectedIndices.Remove(index);
+                AudioManager.Instance.PlaySfx(SfxType.MulliganCardDeselect);
             }
             else
             {
                 selectedIndices.Add(index);
+                AudioManager.Instance.PlaySfx(SfxType.MulliganCardSelect);
             }
 
             RefreshCardViews();
@@ -209,6 +215,7 @@ namespace CometaChampions.Runtime.Battle
         private void HandleKeepAllClicked()
         {
             if (isAnimating) return;
+            AudioManager.Instance.PlaySfx(SfxType.MulliganComplete);
             Hide();
             OnMulliganConfirmed?.Invoke(new List<int>());
         }
@@ -219,11 +226,13 @@ namespace CometaChampions.Runtime.Battle
 
             if (selectedIndices.Count == 0)
             {
+                AudioManager.Instance.PlaySfx(SfxType.MulliganComplete);
                 Hide();
                 OnMulliganConfirmed?.Invoke(new List<int>());
                 return;
             }
 
+            AudioManager.Instance.PlaySfx(SfxType.MulliganConfirmSwap);
             // Cards were selected for mulligan swap
             isAnimating = true;
             SetButtonsInteractable(false);
@@ -280,6 +289,8 @@ namespace CometaChampions.Runtime.Battle
             float totalSpinWait = cardSpinDuration + (swappedIndices.Count > 1 ? cardStaggerDelay * 0.5f : 0f);
             yield return new WaitForSeconds(totalSpinWait);
 
+            AudioManager.Instance.PlaySfx(SfxType.MulliganComplete);
+
             // Update title and subtitle during the preview period
             if (titleText != null) titleText.text = "¡MANO INICIAL LISTA!";
             if (subtitleText != null)
@@ -310,6 +321,8 @@ namespace CometaChampions.Runtime.Battle
             float halfDuration = Mathf.Max(0.1f, cardSpinDuration * 0.5f);
             float elapsed = 0f;
 
+            AudioManager.Instance.PlaySfx(SfxType.MulliganCardSpinOut);
+
             // Phase 1: Rotate 0° -> 90° around Y (card turns edge-on) + slight scale pop
             while (elapsed < halfDuration)
             {
@@ -321,6 +334,8 @@ namespace CometaChampions.Runtime.Battle
                 slotTransform.localScale = new Vector3(scale, scale, 1f);
                 yield return null;
             }
+
+            AudioManager.Instance.PlaySfx(SfxType.MulliganCardTransform);
 
             // Midpoint: Card is edge-on to the screen. Swap visuals to the NEW card!
             if (cardSelectedOverlays != null && slotIndex < cardSelectedOverlays.Length && cardSelectedOverlays[slotIndex] != null)
@@ -367,6 +382,7 @@ namespace CometaChampions.Runtime.Battle
 
             slotTransform.localRotation = Quaternion.identity;
             slotTransform.localScale = Vector3.one;
+            AudioManager.Instance.PlaySfx(SfxType.MulliganCardSnapReveal);
 
             // Smoothly restore default background tint
             if (cBg != null)

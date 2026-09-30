@@ -24,6 +24,7 @@ namespace CometaChampions.Runtime.Battle
 
         public void Show()
         {
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ModalOpen);
             if (modalRoot != null)
             {
                 modalRoot.SetActive(true);
@@ -32,6 +33,7 @@ namespace CometaChampions.Runtime.Battle
 
         public void Hide()
         {
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ModalClose);
             if (modalRoot != null)
             {
                 modalRoot.SetActive(false);

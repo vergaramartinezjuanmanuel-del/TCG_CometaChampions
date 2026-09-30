@@ -9,6 +9,7 @@ using TMPro;
 using CometaChampions.Core.Enums;
 using CometaChampions.Core.Models;
 using CometaChampions.Runtime.Cards;
+using CometaChampions.Runtime.Services;
 
 namespace CometaChampions.Runtime.UI
 {
@@ -79,7 +80,11 @@ namespace CometaChampions.Runtime.UI
             if (sealedPackButton != null)
             {
                 sealedPackButton.onClick.RemoveAllListeners();
-                sealedPackButton.onClick.AddListener(TriggerOpenCurrentPack);
+                sealedPackButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance.PlaySfx(SfxType.PackSelect);
+                    TriggerOpenCurrentPack();
+                });
             }
 
             if (openPackButton != null)
@@ -129,6 +134,7 @@ namespace CometaChampions.Runtime.UI
 
             if (currentPacks.Count == 0) return;
 
+            AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
             currentPackIndex = 0;
             onCompleteCallback = onComplete;
 
@@ -149,6 +155,7 @@ namespace CometaChampions.Runtime.UI
 
         public void Hide()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
             StopAllCoroutines();
             isAnimating = false;
 
@@ -271,6 +278,7 @@ namespace CometaChampions.Runtime.UI
         private void TriggerOpenCurrentPack()
         {
             if (isAnimating) return;
+            AudioManager.Instance.PlaySfx(SfxType.PackOpen);
             StartCoroutine(AnimatePackOpening());
         }
 
@@ -623,6 +631,13 @@ namespace CometaChampions.Runtime.UI
                 if (backFace != null) backFace.SetActive(false);
                 if (frontFace != null) frontFace.SetActive(true);
 
+                AudioManager.Instance.PlaySfx(SfxType.CardRevealFlip);
+                if (currentPackIndex < currentPacks.Count && index < currentPacks[currentPackIndex].Cards.Count)
+                {
+                    var cardRes = currentPacks[currentPackIndex].Cards[index];
+                    AudioManager.Instance.PlaySfx(cardRes.IsNew ? SfxType.NewCardRevealed : SfxType.DuplicateCardRevealed);
+                }
+
                 // Phase 2: Rotate -90° -> 0° around Y (reveals front face)
                 elapsed = 0f;
                 while (elapsed < duration * 0.5f)
@@ -668,6 +683,7 @@ namespace CometaChampions.Runtime.UI
 
         private void HandleNextPackOrDoneClicked()
         {
+            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
             currentPackIndex++;
             if (currentPackIndex < currentPacks.Count)
             {
@@ -681,6 +697,7 @@ namespace CometaChampions.Runtime.UI
 
         private void ShowBatchSummary()
         {
+            AudioManager.Instance.PlaySfx(SfxType.BatchSummary);
             int totalNew = currentPacks.Sum(p => p.NewCardsCount);
             int totalDups = currentPacks.Sum(p => p.DuplicateCardsCount);
             int totalCards = currentPacks.Sum(p => p.Cards.Count);

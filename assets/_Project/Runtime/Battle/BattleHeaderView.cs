@@ -29,10 +29,26 @@ namespace CometaChampions.Runtime.Battle
 
         private void Awake()
         {
-            if (endTurnButton != null) endTurnButton.onClick.AddListener(() => OnEndTurnClicked?.Invoke());
-            if (helpButton != null) helpButton.onClick.AddListener(() => OnHelpClicked?.Invoke());
-            if (restartButton != null) restartButton.onClick.AddListener(() => OnRestartClicked?.Invoke());
-            if (homeButton != null) homeButton.onClick.AddListener(() => OnHomeClicked?.Invoke());
+            if (endTurnButton != null) endTurnButton.onClick.AddListener(() =>
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ButtonClick);
+                OnEndTurnClicked?.Invoke();
+            });
+            if (helpButton != null) helpButton.onClick.AddListener(() =>
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ButtonClick);
+                OnHelpClicked?.Invoke();
+            });
+            if (restartButton != null) restartButton.onClick.AddListener(() =>
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ButtonClick);
+                OnRestartClicked?.Invoke();
+            });
+            if (homeButton != null) homeButton.onClick.AddListener(() =>
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ButtonClick);
+                OnHomeClicked?.Invoke();
+            });
         }
 
         public void UpdateHeader(

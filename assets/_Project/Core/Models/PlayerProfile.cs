@@ -75,6 +75,9 @@ namespace CometaChampions.Core.Models
         public Dictionary<string, CardInventoryEntry> Inventory { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public List<SavedDeckData> SavedDecks { get; set; } = new();
 
+        public bool SfxEnabled { get; set; } = true;
+        public bool MusicEnabled { get; set; } = true;
+
         public DateTime? LastLoginDateUtc
         {
             get => DateTime.TryParse(LastLoginDateUtcString, out var dt) ? dt : null;

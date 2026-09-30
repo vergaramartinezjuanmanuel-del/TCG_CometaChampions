@@ -35,6 +35,7 @@ namespace CometaChampions.Runtime.Battle
             {
                 playAgainButton.onClick.AddListener(() =>
                 {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.ButtonClick);
                     Hide();
                     onPlayAgainCallback?.Invoke();
                 });
@@ -44,6 +45,7 @@ namespace CometaChampions.Runtime.Battle
             {
                 homeButton.onClick.AddListener(() =>
                 {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.SceneTransition);
                     Hide();
                     onHomeCallback?.Invoke();
                 });
@@ -61,6 +63,29 @@ namespace CometaChampions.Runtime.Battle
             onHomeCallback = onHome;
 
             if (state == null) return;
+
+            switch (state.Winner)
+            {
+                case BattleWinner.Player:
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.GameOverVictory);
+                    break;
+                case BattleWinner.Ai:
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.GameOverDefeat);
+                    break;
+                case BattleWinner.Tie:
+                default:
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.GameOverTie);
+                    break;
+            }
+
+            if (goldEarned > 0)
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.RewardsGoldCounter);
+            }
+            if (xpEarned > 0)
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.RewardsXpSparkle);
+            }
 
             if (titleText != null)
             {

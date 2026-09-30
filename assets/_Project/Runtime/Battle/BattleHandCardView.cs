@@ -35,7 +35,11 @@ namespace CometaChampions.Runtime.Battle
             if (cardButton == null) cardButton = GetComponent<Button>();
             if (cardButton != null)
             {
-                cardButton.onClick.AddListener(() => onClickCallback?.Invoke(HandIndex));
+                cardButton.onClick.AddListener(() =>
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+                    onClickCallback?.Invoke(HandIndex);
+                });
             }
 
             ApplyRoundedCardStyle();

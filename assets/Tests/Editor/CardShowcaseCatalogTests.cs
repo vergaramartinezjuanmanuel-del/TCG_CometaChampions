@@ -227,6 +227,63 @@ namespace CometaChampions.Tests
                 Assert.IsTrue(FileExistsUnicodeSafe(full), $"Missing UI asset file on disk: {full}");
             }
         }
+
+        [Test]
+        public void AudioSystem_AllSfxTypes_HaveCorrespondingWavFilesOnDisk()
+        {
+            var sfxValues = (SfxType[])Enum.GetValues(typeof(SfxType));
+            Assert.GreaterOrEqual(sfxValues.Length, 40, "SfxType enum must define at least 40 distinct sound effect types.");
+
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            string sfxRoot = Path.Combine(projectRoot, "Assets/Resources/Audio/SFX");
+            Assert.IsTrue(Directory.Exists(sfxRoot), $"SFX directory must exist at {sfxRoot}");
+
+            foreach (var sfx in sfxValues)
+            {
+                string wavPath = Path.Combine(sfxRoot, $"{sfx}.wav");
+                Assert.IsTrue(File.Exists(wavPath), $"Missing placeholder WAV file for SfxType.{sfx} at {wavPath}");
+                var fileInfo = new FileInfo(wavPath);
+                Assert.Greater(fileInfo.Length, 44, $"WAV file for SfxType.{sfx} must contain valid PCM audio data (> 44 bytes header).");
+            }
+        }
+
+        [Test]
+        public void AudioSystem_AllBgmTypes_HaveCorrespondingWavFilesOnDisk()
+        {
+            var bgmValues = (BgmType[])Enum.GetValues(typeof(BgmType));
+            Assert.GreaterOrEqual(bgmValues.Length, 8, "BgmType enum must define None, Home, Showcase, and the 6 Battle arena tracks.");
+
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            string bgmRoot = Path.Combine(projectRoot, "Assets/Resources/Audio/Music");
+            Assert.IsTrue(Directory.Exists(bgmRoot), $"Music directory must exist at {bgmRoot}");
+
+            foreach (var bgm in bgmValues)
+            {
+                if (bgm == BgmType.None) continue;
+                string wavPath = Path.Combine(bgmRoot, $"{bgm}.wav");
+                Assert.IsTrue(File.Exists(wavPath), $"Missing placeholder WAV file for BgmType.{bgm} at {wavPath}");
+                var fileInfo = new FileInfo(wavPath);
+                Assert.Greater(fileInfo.Length, 44, $"WAV file for BgmType.{bgm} must contain valid WAV header and data (> 44 bytes).");
+            }
+        }
+
+        [Test]
+        public void PlayerProfile_AudioFlags_DefaultToTrue()
+        {
+            var profile = new PlayerProfile();
+            Assert.IsTrue(profile.SfxEnabled, "PlayerProfile.SfxEnabled should default to true.");
+            Assert.IsTrue(profile.MusicEnabled, "PlayerProfile.MusicEnabled should default to true.");
+
+            profile.SfxEnabled = false;
+            profile.MusicEnabled = false;
+            Assert.IsFalse(profile.SfxEnabled);
+            Assert.IsFalse(profile.MusicEnabled);
+        }
     }
 }
+
 

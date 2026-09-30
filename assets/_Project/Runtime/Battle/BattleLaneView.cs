@@ -47,18 +47,28 @@ namespace CometaChampions.Runtime.Battle
         public event Action<int> OnDeployClicked;
         public event Action<int, int> OnUndoSlotClicked;
 
+        private int lastLeaderState = 0; // 0 = Tie, 1 = Player, -1 = AI
+
         private void Awake()
         {
             if (deployButton != null)
             {
-                deployButton.onClick.AddListener(() => OnDeployClicked?.Invoke(laneIndex));
+                deployButton.onClick.AddListener(() =>
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+                    OnDeployClicked?.Invoke(laneIndex);
+                });
                 if (deployButtonImage == null) deployButtonImage = deployButton.GetComponent<Image>();
                 if (deployButtonText == null) deployButtonText = deployButton.GetComponentInChildren<TextMeshProUGUI>();
             }
 
             if (columnClickButton != null)
             {
-                columnClickButton.onClick.AddListener(() => OnDeployClicked?.Invoke(laneIndex));
+                columnClickButton.onClick.AddListener(() =>
+                {
+                    CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+                    OnDeployClicked?.Invoke(laneIndex);
+                });
             }
         }
 
@@ -130,6 +140,15 @@ namespace CometaChampions.Runtime.Battle
 
             bool playerLeads = pPower > aPower;
             bool aiLeads = aPower > pPower;
+            int currentLeaderState = playerLeads ? 1 : (aiLeads ? -1 : 0);
+            if (currentLeaderState != lastLeaderState && (pPower > 0 || aPower > 0))
+            {
+                lastLeaderState = currentLeaderState;
+                var sfx = currentLeaderState == 1
+                    ? SfxType.LaneLeaderPlayer
+                    : (currentLeaderState == -1 ? SfxType.LaneLeaderAi : SfxType.LaneLeaderTie);
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(sfx);
+            }
 
             if (playerLeaderGlow != null) playerLeaderGlow.SetActive(playerLeads);
             if (aiLeaderGlow != null) aiLeaderGlow.SetActive(aiLeads);

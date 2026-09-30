@@ -94,12 +94,14 @@ namespace CometaChampions.Runtime.UI
 
         public void SelectCategory(CardCategory category)
         {
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             selectedCategory = category;
             RefreshCardList();
         }
 
         private void OnClanFilterChanged(int index)
         {
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.TabSwitch);
             selectedClanFilter = index switch
             {
                 1 => ClanType.Milenarios,
@@ -213,8 +215,13 @@ namespace CometaChampions.Runtime.UI
 
         private void OnUpgradeFoilClicked()
         {
-            if (cardsCollectedForFoil < RequiredCardsForFoil || playerGoldCoins < FoilUpgradeCost) return;
+            if (cardsCollectedForFoil < RequiredCardsForFoil || playerGoldCoins < FoilUpgradeCost)
+            {
+                CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.UpgradeFoilFail);
+                return;
+            }
 
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(SfxType.UpgradeFoilSuccess);
             playerGoldCoins -= FoilUpgradeCost;
             cardsCollectedForFoil = 0;
             currentFoilLevel = Math.Min(3, currentFoilLevel + 1);

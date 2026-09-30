@@ -221,6 +221,7 @@ namespace CometaChampions.Runtime.UI
 
         private void OnClick()
         {
+            CometaChampions.Runtime.Services.AudioManager.Instance.PlaySfx(CometaChampions.Core.Enums.SfxType.CardGridSelect);
             onSelectedCallback?.Invoke(CardData);
         }
     }
