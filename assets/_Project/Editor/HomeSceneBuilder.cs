@@ -1562,13 +1562,13 @@ namespace CometaChampions.Editor
             title.color = new Color(1f, 0.85f, 0.2f);
 
             // Subtitle
-            var subtitle = CreateTMPText("Subtitle", dialogObj.transform, "Exactamente 12 cartas (máx 2 copias por carta). Solo cartas de tu inventario.", new Vector2(0, -70), new Vector2(800, 24), 14, TextAlignmentOptions.Center);
+            var subtitle = CreateTMPText("Subtitle", dialogObj.transform, DeckManagerModal.DeckRulesSubtitleText, new Vector2(0, -68), new Vector2(860, 40), 12.5f, TextAlignmentOptions.Center);
             subtitle.color = new Color(0.75f, 0.80f, 0.90f);
 
             // Deck Count Text
-            var countLabel = CreateTMPText("DeckCountText", dialogObj.transform, "CARTAS: 12 / 12", new Vector2(0, -100), new Vector2(400, 30), 18, TextAlignmentOptions.Center);
+            var countLabel = CreateTMPText("DeckCountText", dialogObj.transform, "CARTAS: 0 / 12", new Vector2(0, -108), new Vector2(400, 30), 18, TextAlignmentOptions.Center);
             countLabel.fontStyle = FontStyles.Bold;
-            countLabel.color = new Color(0.2f, 1f, 0.4f);
+            countLabel.color = new Color(1f, 0.85f, 0.2f);
             modalSo.FindProperty("deckCountText").objectReferenceValue = countLabel;
 
             // Cards Grid Container

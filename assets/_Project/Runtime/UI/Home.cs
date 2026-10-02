@@ -623,6 +623,10 @@ namespace CometaChampions.Runtime.UI
             }
         }
 
+        private GameObject deckWarningModalRoot;
+        private TextMeshProUGUI deckWarningTitleText;
+        private TextMeshProUGUI deckWarningBodyText;
+
         public SavedDeckData GetActiveCombatDeck()
         {
             if (Profile == null) return null;
@@ -631,8 +635,8 @@ namespace CometaChampions.Runtime.UI
             var deck = Profile.SavedDecks.FirstOrDefault();
             if (deck == null)
             {
-                var autoDeck = DeckValidator.CreateDeckFromInventory(Profile);
-                deck = new SavedDeckData("Mazo de Combate", ClanType.None, autoDeck.Select(c => c.Id));
+                // Initialize empty deck (0/12) so starter cards are NOT added automatically
+                deck = new SavedDeckData("Mazo de Combate", ClanType.None, Array.Empty<string>());
                 Profile.SavedDecks.Add(deck);
                 SaveManager.Save();
             }
@@ -651,7 +655,7 @@ namespace CometaChampions.Runtime.UI
 
             if (toggleDeckCardButton != null)
             {
-                if (selectedCard == null || selectedCard.Category == CardCategory.Arena || selectedCard.Type == CardType.Arena)
+                if (selectedCard == null)
                 {
                     toggleDeckCardButton.gameObject.SetActive(false);
                 }
@@ -678,7 +682,11 @@ namespace CometaChampions.Runtime.UI
                         else if (copiesInDeck == 1)
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = count < DeckValidator.ArenaRequiredDeckSize ? "+ AÑADIR COPIA (1/2)" : "- QUITAR COPIA (1/2)";
+                            {
+                                toggleDeckCardButtonText.text = count < DeckValidator.ArenaRequiredDeckSize
+                                    ? $"+ DUPLICADA: {DeckValidator.DuplicateCardDeckGoldCost} ORO (1/2)"
+                                    : "- QUITAR COPIA (1/2)";
+                            }
                             toggleDeckCardButton.interactable = true;
                         }
                         else
@@ -713,16 +721,29 @@ namespace CometaChampions.Runtime.UI
 
             if (copiesInDeck < DeckValidator.ArenaMaxCopiesPerCard && activeDeck.CardIds.Count < DeckValidator.ArenaRequiredDeckSize)
             {
-                activeDeck.CardIds.Add(selectedCard.Id);
-                AudioManager.Instance.PlaySfx(SfxType.AddCardToDeck);
+                if (DeckValidator.TryAddCardToDeck(Profile, activeDeck.CardIds, selectedCard.Id, out var errorMsg))
+                {
+                    AudioManager.Instance.PlaySfx(SfxType.AddCardToDeck);
+                    SaveManager.Save();
+                    UpdateCurrencyDisplay();
+                    UpdateFoilProgressUI(selectedCard);
+                }
+                else
+                {
+                    AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
+                    ShowDeckNoticeModal(
+                        "REQUISITO PARA CARTA DUPLICADA",
+                        errorMsg + "\n\n• Recuerda que también puedes consultar o quitar cartas de tu mazo en cualquier momento usando el botón <b>MAZO</b>.");
+                    return;
+                }
             }
             else if (copiesInDeck > 0)
             {
                 activeDeck.CardIds.Remove(selectedCard.Id);
                 AudioManager.Instance.PlaySfx(SfxType.RemoveCardFromDeck);
+                SaveManager.Save();
             }
 
-            SaveManager.Save();
             UpdateDeckUI();
             if (deckModal != null)
             {
@@ -732,21 +753,170 @@ namespace CometaChampions.Runtime.UI
 
         private void OnBattleClicked()
         {
-            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             var activeDeck = GetActiveCombatDeck();
-            if (activeDeck == null || activeDeck.CardIds == null || activeDeck.CardIds.Count < DeckValidator.ArenaRequiredDeckSize)
+            int count = activeDeck?.CardIds?.Count ?? 0;
+
+            if (count < DeckValidator.ArenaRequiredDeckSize)
             {
-                var autoDeck = DeckValidator.CreateDeckFromInventory(Profile);
-                if (autoDeck != null && autoDeck.Count == DeckValidator.ArenaRequiredDeckSize)
-                {
-                    if (activeDeck != null)
-                    {
-                        activeDeck.CardIds = autoDeck.Select(c => c.Id).ToList();
-                        SaveManager.Save();
-                    }
-                }
+                AudioManager.Instance.PlaySfx(SfxType.ErrorDenied);
+                ShowIncompleteDeckWarningModal(count);
+                return;
             }
+
+            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
             UnityEngine.SceneManagement.SceneManager.LoadScene("Battle");
+        }
+
+        private void ShowIncompleteDeckWarningModal(int currentCount)
+        {
+            string message =
+                $"Actualmente tienes <b>{currentCount} / {DeckValidator.ArenaRequiredDeckSize}</b> cartas en tu mazo.\n" +
+                $"Para poder iniciar un combate se requiere tener <b>{DeckValidator.ArenaRequiredDeckSize} cartas</b> en el mazo.\n\n" +
+                "• Debes <b>desbloquear más tarjetas</b> o <b>agregar tus tarjetas desbloqueadas</b> seleccionándolas individualmente desde la sección <b>'Mis Cartas'</b>.\n" +
+                $"• El máximo de la misma tarjeta que puedes agregar al mazo es <b>{DeckValidator.ArenaMaxCopiesPerCard} veces</b> (agregar una duplicada requiere tener 2 copias en tu inventario y cuesta <b>{DeckValidator.DuplicateCardDeckGoldCost} monedas de oro</b>).\n" +
+                "• Para consultar las tarjetas de tu mazo puedes ir a la ventana del mazo mediante el botón <b>MAZO</b> en el Home o usando el botón de abajo.";
+
+            ShowDeckNoticeModal("¡NO HAY SUFICIENTES CARTAS EN EL MAZO!", message);
+        }
+
+        private void ShowDeckNoticeModal(string title, string bodyMessage)
+        {
+            EnsureDeckWarningModalCreated();
+            if (deckWarningModalRoot == null) return;
+
+            if (deckWarningTitleText != null) deckWarningTitleText.text = title;
+            if (deckWarningBodyText != null) deckWarningBodyText.text = bodyMessage;
+
+            deckWarningModalRoot.transform.SetAsLastSibling();
+            deckWarningModalRoot.SetActive(true);
+        }
+
+        private void HideDeckWarningModal()
+        {
+            AudioManager.Instance.PlaySfx(SfxType.ModalClose);
+            if (deckWarningModalRoot != null)
+            {
+                deckWarningModalRoot.SetActive(false);
+            }
+        }
+
+        private void EnsureDeckWarningModalCreated()
+        {
+            if (deckWarningModalRoot != null) return;
+
+            deckWarningModalRoot = new GameObject("DeckWarningModalRoot", typeof(RectTransform));
+            deckWarningModalRoot.transform.SetParent(transform, false);
+            var rootRt = deckWarningModalRoot.GetComponent<RectTransform>();
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.sizeDelta = Vector2.zero;
+
+            var backdrop = deckWarningModalRoot.AddComponent<Image>();
+            backdrop.color = new Color(0.02f, 0.03f, 0.06f, 0.86f);
+
+            var dialogObj = new GameObject("WarningDialog", typeof(RectTransform));
+            dialogObj.transform.SetParent(deckWarningModalRoot.transform, false);
+            var dialogRt = dialogObj.GetComponent<RectTransform>();
+            dialogRt.anchorMin = new Vector2(0.5f, 0.5f);
+            dialogRt.anchorMax = new Vector2(0.5f, 0.5f);
+            dialogRt.pivot = new Vector2(0.5f, 0.5f);
+            dialogRt.sizeDelta = new Vector2(680f, 430f);
+
+            var dialogImg = dialogObj.AddComponent<Image>();
+            dialogImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
+
+            // Title
+            var titleObj = new GameObject("Title", typeof(RectTransform));
+            titleObj.transform.SetParent(dialogObj.transform, false);
+            var titleRt = titleObj.GetComponent<RectTransform>();
+            titleRt.anchorMin = new Vector2(0f, 1f);
+            titleRt.anchorMax = new Vector2(1f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -22f);
+            titleRt.sizeDelta = new Vector2(-40f, 42f);
+
+            deckWarningTitleText = titleObj.AddComponent<TextMeshProUGUI>();
+            deckWarningTitleText.fontSize = 23f;
+            deckWarningTitleText.fontStyle = FontStyles.Bold;
+            deckWarningTitleText.alignment = TextAlignmentOptions.Center;
+            deckWarningTitleText.color = new Color(1f, 0.84f, 0.25f);
+
+            // Body
+            var bodyObj = new GameObject("Body", typeof(RectTransform));
+            bodyObj.transform.SetParent(dialogObj.transform, false);
+            var bodyRt = bodyObj.GetComponent<RectTransform>();
+            bodyRt.anchorMin = new Vector2(0f, 0f);
+            bodyRt.anchorMax = new Vector2(1f, 1f);
+            bodyRt.offsetMin = new Vector2(36f, 95f);
+            bodyRt.offsetMax = new Vector2(-36f, -75f);
+
+            deckWarningBodyText = bodyObj.AddComponent<TextMeshProUGUI>();
+            deckWarningBodyText.fontSize = 16.5f;
+            deckWarningBodyText.alignment = TextAlignmentOptions.TopLeft;
+            deckWarningBodyText.textWrappingMode = TextWrappingModes.Normal;
+            deckWarningBodyText.color = new Color(0.90f, 0.93f, 0.98f);
+
+            // Button 1: IR AL MAZO
+            var goDeckBtnObj = new GameObject("GoToDeckButton", typeof(RectTransform));
+            goDeckBtnObj.transform.SetParent(dialogObj.transform, false);
+            var goDeckRt = goDeckBtnObj.GetComponent<RectTransform>();
+            goDeckRt.anchorMin = new Vector2(0.5f, 0f);
+            goDeckRt.anchorMax = new Vector2(0.5f, 0f);
+            goDeckRt.pivot = new Vector2(0.5f, 0f);
+            goDeckRt.anchoredPosition = new Vector2(-135f, 24f);
+            goDeckRt.sizeDelta = new Vector2(230f, 48f);
+
+            var goDeckBg = goDeckBtnObj.AddComponent<Image>();
+            goDeckBg.color = new Color(0.18f, 0.55f, 0.85f, 0.98f);
+            var goDeckBtn = goDeckBtnObj.AddComponent<Button>();
+            goDeckBtn.onClick.AddListener(() =>
+            {
+                HideDeckWarningModal();
+                OnDeckButtonClicked();
+            });
+
+            var goDeckLblObj = new GameObject("Label", typeof(RectTransform));
+            goDeckLblObj.transform.SetParent(goDeckBtnObj.transform, false);
+            var goDeckLblRt = goDeckLblObj.GetComponent<RectTransform>();
+            goDeckLblRt.anchorMin = Vector2.zero;
+            goDeckLblRt.anchorMax = Vector2.one;
+            goDeckLblRt.sizeDelta = Vector2.zero;
+            var goDeckTmp = goDeckLblObj.AddComponent<TextMeshProUGUI>();
+            goDeckTmp.text = "IR AL MAZO";
+            goDeckTmp.fontSize = 16f;
+            goDeckTmp.fontStyle = FontStyles.Bold;
+            goDeckTmp.alignment = TextAlignmentOptions.Center;
+            goDeckTmp.color = Color.white;
+
+            // Button 2: ENTENDIDO
+            var closeBtnObj = new GameObject("CloseWarningButton", typeof(RectTransform));
+            closeBtnObj.transform.SetParent(dialogObj.transform, false);
+            var closeRt = closeBtnObj.GetComponent<RectTransform>();
+            closeRt.anchorMin = new Vector2(0.5f, 0f);
+            closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            closeRt.anchoredPosition = new Vector2(135f, 24f);
+            closeRt.sizeDelta = new Vector2(230f, 48f);
+
+            var closeBg = closeBtnObj.AddComponent<Image>();
+            closeBg.color = new Color(0.22f, 0.70f, 0.35f, 0.98f);
+            var closeBtn = closeBtnObj.AddComponent<Button>();
+            closeBtn.onClick.AddListener(HideDeckWarningModal);
+
+            var closeLblObj = new GameObject("Label", typeof(RectTransform));
+            closeLblObj.transform.SetParent(closeBtnObj.transform, false);
+            var closeLblRt = closeLblObj.GetComponent<RectTransform>();
+            closeLblRt.anchorMin = Vector2.zero;
+            closeLblRt.anchorMax = Vector2.one;
+            closeLblRt.sizeDelta = Vector2.zero;
+            var closeTmp = closeLblObj.AddComponent<TextMeshProUGUI>();
+            closeTmp.text = "ENTENDIDO";
+            closeTmp.fontSize = 16f;
+            closeTmp.fontStyle = FontStyles.Bold;
+            closeTmp.alignment = TextAlignmentOptions.Center;
+            closeTmp.color = Color.white;
+
+            deckWarningModalRoot.SetActive(false);
         }
 
         private void OnShowcase3DClicked()
@@ -905,16 +1075,11 @@ namespace CometaChampions.Runtime.UI
                     : string.Empty;
             }
 
-            // 4. Stats Row (Hide for Trompos / Arenas)
-            bool isCreature = card.IsCreature;
-            if (statsContainer != null) statsContainer.SetActive(isCreature);
-
+            // 4. Stats Row (Shown for all card types: Heroes, Beasts, Trompos, Arenas)
+            if (statsContainer != null) statsContainer.SetActive(true);
             if (costText != null) costText.text = card.EnergyCost.ToString();
-            if (isCreature)
-            {
-                if (attackText != null) attackText.text = card.BaseAttack.ToString();
-                if (healthText != null) healthText.text = card.BaseHealth.ToString();
-            }
+            if (attackText != null) attackText.text = card.BaseAttack.ToString();
+            if (healthText != null) healthText.text = card.BaseHealth.ToString();
 
             // 5. Rules & Lore
             if (rulesText != null)

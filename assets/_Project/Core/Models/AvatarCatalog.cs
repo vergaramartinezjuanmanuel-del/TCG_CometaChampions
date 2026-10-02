@@ -15,14 +15,14 @@ namespace CometaChampions.Core.Models
 
         private static readonly List<PlayerAvatarDefinition> Avatars = new()
         {
-            // === NIVEL 1: 5 Avatares Iniciales (3 Gratuitos por defecto, 2 por Oro) ===
+            // === NIVEL 1: 3 Avatares Iniciales (1 Gratuito por defecto, 2 por Oro) ===
             new PlayerAvatarDefinition("AVATAR_COMETIN", "Cometín", "Milenarios", "cometin_Mi.png", 1, 0),
-            new PlayerAvatarDefinition("AVATAR_ESPECTRO", "Espectro", "Míticos", "espectro_My.png", 1, 0),
-            new PlayerAvatarDefinition("AVATAR_AVISPON", "Avispón", "Depredadores", "avispon_P.png", 1, 0),
+            new PlayerAvatarDefinition("AVATAR_ESPECTRO", "Espectro", "Míticos", "espectro_My.png", 2, 0),
+            new PlayerAvatarDefinition("AVATAR_AVISPON", "Avispón", "Depredadores", "avispon_P.png", 2, 0),
             new PlayerAvatarDefinition("AVATAR_AZTECA", "Azteca", "Milenarios", "azteca_Mi.png", 1, 100),
             new PlayerAvatarDefinition("AVATAR_DIAMANTE", "Diamante", "Fugitivos", "diamante_F.png", 1, 150),
 
-            // === NIVEL 2 - 3: 3 Avatares ===
+            // === NIVEL 2 - 3: Avatares de Progresión ===
             new PlayerAvatarDefinition("AVATAR_DRAKY", "Draky", "Fugitivos", "draky_F.png", 2, 0),
             new PlayerAvatarDefinition("AVATAR_SILVER", "Silver", "Milenarios", "silver_Mi.png", 2, 250),
             new PlayerAvatarDefinition("AVATAR_PANTHER", "Panther", "Depredadores", "panther_P.png", 3, 350),

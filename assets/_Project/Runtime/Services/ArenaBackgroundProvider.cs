@@ -17,8 +17,6 @@ namespace CometaChampions.Runtime.Services
         public const string PistaDraconia = ArenaBackgroundCatalog.PistaDraconia;
         public const string LlanurasTirano = ArenaBackgroundCatalog.LlanurasTirano;
         public const string NebulosaCosmica = ArenaBackgroundCatalog.NebulosaCosmica;
-        public const string Pedestal3DActive = ArenaBackgroundCatalog.Pedestal3DActive;
-        public const string Pedestal3DIdle = ArenaBackgroundCatalog.Pedestal3DIdle;
 
         private static readonly Dictionary<string, Sprite> SpriteCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -89,8 +87,7 @@ namespace CometaChampions.Runtime.Services
             // 2. Editor AssetDatabase Fallbacks
             string[] editorPaths = {
                 "Assets/Resources/Backgrounds/" + nameWithoutExt + ".jpg",
-                "Assets/Resources/Backgrounds/" + nameWithoutExt + ".png",
-                "Assets/_Project/Art/Backgrounds/" + nameWithoutExt + ".jpg"
+                "Assets/Resources/Backgrounds/" + nameWithoutExt + ".png"
             };
 
             foreach (var assetPath in editorPaths)
@@ -121,8 +118,7 @@ namespace CometaChampions.Runtime.Services
             // 3. Fallback: Direct file read (for Standalone PC/Mac if files are present on disk)
             string[] candidateFiles = {
                 Path.Combine(Application.dataPath, "Resources/Backgrounds", nameWithoutExt + ".jpg"),
-                Path.Combine(Application.dataPath, "Resources/Backgrounds", nameWithoutExt + ".png"),
-                Path.Combine(Application.dataPath, "_Project/Art/Backgrounds", nameWithoutExt + ".jpg")
+                Path.Combine(Application.dataPath, "Resources/Backgrounds", nameWithoutExt + ".png")
             };
 
             foreach (var fullPath in candidateFiles)

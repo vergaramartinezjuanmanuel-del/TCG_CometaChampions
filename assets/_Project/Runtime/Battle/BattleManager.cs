@@ -211,7 +211,7 @@ namespace CometaChampions.Runtime.Battle
                         foreach (var id in saved.CardIds)
                         {
                             var def = MvpCardCatalog.GetCardById(id) ?? CardCatalog.GetCardById(id);
-                            if (def != null && def.Category != CardCategory.Arena && def.Type != CardType.Arena)
+                            if (def != null)
                             {
                                 cards.Add(def);
                             }

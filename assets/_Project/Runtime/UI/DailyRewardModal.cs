@@ -23,7 +23,7 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private TextMeshProUGUI countdownText;
         [SerializeField] private Button claimButton;
         [SerializeField] private TextMeshProUGUI claimButtonText;
-
+        [SerializeField] private TMP_FontAsset font;
         [Header("7-Day Calendar Grid")]
         [SerializeField] private Transform calendarContainer;
 
@@ -205,39 +205,46 @@ namespace CometaChampions.Runtime.UI
             var cardObj = new GameObject($"DayCard_{pack.DayIndex}");
             cardObj.transform.SetParent(parent, false);
             var cardRect = cardObj.AddComponent<RectTransform>();
-            cardRect.sizeDelta = new Vector2(115, 230);
+            cardRect.sizeDelta = new Vector2(180, 230);
 
             var bgImg = cardObj.AddComponent<Image>();
-            if (isCurrent && canClaimToday)
+            bgImg.sprite = Resources.Load<Sprite>("UI/daily_reward_card_bg");
+            
+            if (!isCurrent && !isPast && !isTomorrow)
             {
-                bgImg.color = new Color(0.22f, 0.28f, 0.45f, 0.98f);
-            }
-            else if (isPast)
-            {
-                bgImg.color = new Color(0.10f, 0.16f, 0.14f, 0.90f);
-            }
-            else if (isTomorrow)
-            {
-                bgImg.color = new Color(0.14f, 0.16f, 0.25f, 0.95f);
-            }
-            else
-            {
-                bgImg.color = new Color(0.09f, 0.10f, 0.15f, 0.85f);
+                bgImg.color = new Color(1f, 1f, 1f, 0.5f);
             }
 
+            // if (isCurrent && canClaimToday)
+            // {
+            //     bgImg.color = new Color(0.22f, 0.28f, 0.45f, 0.98f);
+            // }
+            // else if (isPast)
+            // {
+            //     bgImg.color = new Color(0.10f, 0.16f, 0.14f, 0.90f);
+            // }
+            // else if (isTomorrow)
+            // {
+            //     bgImg.color = new Color(0.14f, 0.16f, 0.25f, 0.95f);
+            // }
+            // else
+            // {
+            //     bgImg.color = new Color(0.09f, 0.10f, 0.15f, 0.85f);
+            // }
+
             // Outer Highlight Border for Active Day
-            if (isCurrent && canClaimToday)
-            {
-                var borderObj = new GameObject("Border");
-                borderObj.transform.SetParent(cardObj.transform, false);
-                var bRect = borderObj.AddComponent<RectTransform>();
-                bRect.anchorMin = Vector2.zero;
-                bRect.anchorMax = Vector2.one;
-                bRect.sizeDelta = Vector2.zero;
-                var bImg = borderObj.AddComponent<Image>();
-                bImg.color = new Color(1f, 0.85f, 0.2f, 0.75f);
-                bImg.raycastTarget = false;
-            }
+            // if (isCurrent && canClaimToday)
+            // {
+            //     var borderObj = new GameObject("Border");
+            //     borderObj.transform.SetParent(cardObj.transform, false);
+            //     var bRect = borderObj.AddComponent<RectTransform>();
+            //     bRect.anchorMin = Vector2.zero;
+            //     bRect.anchorMax = Vector2.one;
+            //     bRect.sizeDelta = Vector2.zero;
+            //     var bImg = borderObj.AddComponent<Image>();
+            //     bImg.color = new Color(1f, 0.85f, 0.2f, 0.75f);
+            //     bImg.raycastTarget = false;
+            // }
 
             // Header Day Label ("DÍA 1", "DÍA 7 MEGA")
             var dayLabelObj = new GameObject("DayLabel");
@@ -246,62 +253,89 @@ namespace CometaChampions.Runtime.UI
             dlRect.anchorMin = new Vector2(0.5f, 1);
             dlRect.anchorMax = new Vector2(0.5f, 1);
             dlRect.pivot = new Vector2(0.5f, 1);
-            dlRect.anchoredPosition = new Vector2(0, -8);
-            dlRect.sizeDelta = new Vector2(110, 22);
+            dlRect.anchoredPosition = new Vector2(-3, -67);
+            dlRect.sizeDelta = new Vector2(22, 22);
 
             var dlTMP = dayLabelObj.AddComponent<TextMeshProUGUI>();
-            dlTMP.text = pack.DayIndex == 7 ? "DÍA 7 MEGA" : $"DÍA {pack.DayIndex}";
-            dlTMP.fontSize = 13;
+            //dlTMP.text = pack.DayIndex == 7 ? "DÍA 7 MEGA" : $"DÍA {pack.DayIndex}";
+            dlTMP.text = $"{pack.DayIndex}";
+            dlTMP.font = font;
+            dlTMP.fontSize = 40;
             dlTMP.fontStyle = FontStyles.Bold;
             dlTMP.alignment = TextAlignmentOptions.Center;
-            dlTMP.color = pack.DayIndex == 7
-                ? new Color(1f, 0.85f, 0.2f)
-                : ((isCurrent && canClaimToday) ? new Color(0.2f, 0.85f, 1f) : Color.white);
+            // dlTMP.color = pack.DayIndex == 7
+            //     ? new Color(1f, 0.85f, 0.2f)
+            //     : ((isCurrent && canClaimToday) ? new Color(0.2f, 0.85f, 1f) : Color.white);
 
             // Icon Container / Badge
-            var iconBoxObj = new GameObject("IconBox");
+            var iconBoxObj = new GameObject("Title");
             iconBoxObj.transform.SetParent(cardObj.transform, false);
             var ibRect = iconBoxObj.AddComponent<RectTransform>();
             ibRect.anchorMin = new Vector2(0.5f, 1);
             ibRect.anchorMax = new Vector2(0.5f, 1);
             ibRect.pivot = new Vector2(0.5f, 1);
-            ibRect.anchoredPosition = new Vector2(0, -32);
-            ibRect.sizeDelta = new Vector2(70, 70);
+            ibRect.anchoredPosition = new Vector2(0, 5);
+            ibRect.sizeDelta = new Vector2(122, 70);
 
-            var ibImg = iconBoxObj.AddComponent<Image>();
-            ibImg.color = new Color(0.06f, 0.07f, 0.11f, 0.90f);
-
-            var iconTextObj = new GameObject("IconEmoji");
-            iconTextObj.transform.SetParent(iconBoxObj.transform, false);
-            var itRect = iconTextObj.AddComponent<RectTransform>();
-            itRect.anchorMin = Vector2.zero;
-            itRect.anchorMax = Vector2.one;
-            itRect.sizeDelta = Vector2.zero;
-
-            var itTMP = iconTextObj.AddComponent<TextMeshProUGUI>();
+            var itTMP = iconBoxObj.AddComponent<TextMeshProUGUI>();
             itTMP.text = pack.HasAvatarReward
-                ? "<color=#00E5FF>AVATAR</color>"
+                ? "<color=#ffffff>AVATAR</color>"
                 : (pack.BoosterPacks > 0
-                    ? "<color=#FFD700>SOBRE</color>"
+                    ? "<color=#ffffff>SOBRE</color>"
                     : (pack.CardCount > 1
-                        ? $"<color=#00FF88>x{pack.CardCount}\nCARTAS</color>"
-                        : $"<color=#FFD700>+{pack.GoldCoins}\nORO</color>"));
-            itTMP.fontSize = 14;
+                        ? $"<color=#ffffff>x{pack.CardCount} CARTAS</color>"
+                        : $"<color=#ffffff>+{pack.GoldCoins} ORO</color>"));
+            dlTMP.font = font;
+            itTMP.fontSize = 18;
             itTMP.fontStyle = FontStyles.Bold;
             itTMP.alignment = TextAlignmentOptions.Center;
 
+            // var ibImg = iconBoxObj.AddComponent<Image>();
+            // ibImg.color = new Color(0.06f, 0.07f, 0.11f, 0.90f);
+
+            // var iconTextObj = new GameObject("IconEmoji");
+            // iconTextObj.transform.SetParent(iconBoxObj.transform, false);
+            // var itRect = iconTextObj.AddComponent<RectTransform>();
+            // itRect.anchorMin = Vector2.zero;
+            // itRect.anchorMax = Vector2.one;
+            // itRect.sizeDelta = Vector2.zero;
+
+            // var itTMP = iconTextObj.AddComponent<TextMeshProUGUI>();
+            // itTMP.text = pack.HasAvatarReward
+            //     ? "<color=#00E5FF>AVATAR</color>"
+            //     : (pack.BoosterPacks > 0
+            //         ? "<color=#FFD700>SOBRE</color>"
+            //         : (pack.CardCount > 1
+            //             ? $"<color=#00FF88>x{pack.CardCount}\nCARTAS</color>"
+            //             : $"<color=#FFD700>+{pack.GoldCoins}\nORO</color>"));
+            // itTMP.fontSize = 14;
+            // itTMP.fontStyle = FontStyles.Bold;
+            // itTMP.alignment = TextAlignmentOptions.Center;
+
+            var descObj = new GameObject("DescBox");
+            descObj.transform.SetParent(cardObj.transform, false);
+            var dsRect = descObj.AddComponent<RectTransform>();
+            dsRect.anchorMin = new Vector2(0.5f, 1);
+            dsRect.anchorMax = new Vector2(0.5f, 1);
+            dsRect.pivot = new Vector2(0.5f, 1);
+            dsRect.anchoredPosition = new Vector2(0, -113);
+            dsRect.sizeDelta = new Vector2(110, 80);
+
+            var ibImg = descObj.AddComponent<Image>();
+            ibImg.color = new Color(0f, 0f, 0f, 0.5f);
+
             // Reward Details List
             var rewardsObj = new GameObject("RewardsText");
-            rewardsObj.transform.SetParent(cardObj.transform, false);
+            rewardsObj.transform.SetParent(descObj.transform, false);
             var rwRect = rewardsObj.AddComponent<RectTransform>();
             rwRect.anchorMin = new Vector2(0.5f, 0);
             rwRect.anchorMax = new Vector2(0.5f, 0);
             rwRect.pivot = new Vector2(0.5f, 0);
-            rwRect.anchoredPosition = new Vector2(0, 36);
+            rwRect.anchoredPosition = new Vector2(0, 0);
             rwRect.sizeDelta = new Vector2(105, 80);
 
             var rwTMP = rewardsObj.AddComponent<TextMeshProUGUI>();
-            rwTMP.fontSize = 11;
+            rwTMP.fontSize = 16;
             rwTMP.alignment = TextAlignmentOptions.Center;
 
             var rewardLines = new List<string> { $"<color=#FFD700>+{pack.GoldCoins} Oro</color>" };

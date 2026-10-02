@@ -29,6 +29,11 @@ namespace CometaChampions.Runtime.UI
         private Action onDeckChangedCallback;
         private readonly List<GameObject> spawnedSlotObjects = new();
 
+        public const string DeckRulesSubtitleText =
+            "Exactamente 12 cartas de tu inventario (máx 2 copias por carta; agregar 2da copia cuesta 50 de oro).\n" +
+            "Para agregar cartas manualmente, selecciona cada tarjeta desde 'Mis Cartas' y agrégala al mazo.\n" +
+            "'Auto-Completar' solo añade cartas desbloqueadas al azar sin duplicadas.";
+
         private void Awake()
         {
             if (closeButton != null)
@@ -40,6 +45,38 @@ namespace CometaChampions.Runtime.UI
             {
                 autoCompleteButton.onClick.AddListener(HandleAutoCompleteClicked);
             }
+
+            UpdateSubtitleNote();
+        }
+
+        private void UpdateSubtitleNote()
+        {
+            var subtitleTransform = transform.Find("Subtitle");
+            if (subtitleTransform != null)
+            {
+                var subtitleTmp = subtitleTransform.GetComponent<TextMeshProUGUI>();
+                if (subtitleTmp != null)
+                {
+                    subtitleTmp.text = DeckRulesSubtitleText;
+                    subtitleTmp.fontSize = 12.5f;
+                    subtitleTmp.textWrappingMode = TextWrappingModes.Normal;
+                }
+                // var rt = subtitleTransform.GetComponent<RectTransform>();
+                // if (rt != null)
+                // {
+                //     rt.anchoredPosition = new Vector2(0, -68);
+                //     rt.sizeDelta = new Vector2(860, 40);
+                // }
+            }
+
+            // if (deckCountText != null)
+            // {
+            //     var countRt = deckCountText.GetComponent<RectTransform>();
+            //     if (countRt != null)
+            //     {
+            //         countRt.anchoredPosition = new Vector2(0, 40);
+            //     }
+            // }
         }
 
         public void Show(PlayerProfile profile, Action onDeckChanged = null)
@@ -48,6 +85,7 @@ namespace CometaChampions.Runtime.UI
             currentProfile = profile ?? SaveManager.Profile;
             onDeckChangedCallback = onDeckChanged;
 
+            UpdateSubtitleNote();
             EnsureValidDeckExists();
 
             if (modalRoot != null)
@@ -76,11 +114,10 @@ namespace CometaChampions.Runtime.UI
                 currentProfile.SavedDecks = new List<SavedDeckData>();
             }
 
-            // Ensure first deck exists
+            // Ensure first deck exists (initialized empty so starter cards are not auto-added)
             if (currentProfile.SavedDecks.Count == 0)
             {
-                var autoDeck = DeckValidator.CreateDeckFromInventory(currentProfile);
-                var newDeck = new SavedDeckData("Mazo de Combate", ClanType.None, autoDeck.Select(c => c.Id));
+                var newDeck = new SavedDeckData("Mazo de Combate", ClanType.None, Array.Empty<string>());
                 currentProfile.SavedDecks.Add(newDeck);
                 SaveManager.Save();
             }
@@ -164,25 +201,26 @@ namespace CometaChampions.Runtime.UI
             remRect.sizeDelta = new Vector2(28, 28);
 
             var remImg = remObj.AddComponent<Image>();
-            remImg.color = new Color(0.6f, 0.1f, 0.15f, 0.95f);
+            remImg.sprite = Resources.Load<Sprite>("UI/cerrar");
+            //remImg.color = new Color(0.6f, 0.1f, 0.15f, 0.95f);
 
             var remBtn = remObj.AddComponent<Button>();
             remBtn.onClick.AddListener(() => RemoveCardAt(indexInDeck));
 
-            var remTextObj = new GameObject("RemLabel", typeof(RectTransform));
-            remTextObj.transform.SetParent(remObj.transform, false);
-            var remTextRect = remTextObj.GetComponent<RectTransform>();
-            remTextRect.anchorMin = Vector2.zero;
-            remTextRect.anchorMax = Vector2.one;
-            remTextRect.offsetMin = Vector2.zero;
-            remTextRect.offsetMax = Vector2.zero;
+            // var remTextObj = new GameObject("RemLabel", typeof(RectTransform));
+            // remTextObj.transform.SetParent(remObj.transform, false);
+            // var remTextRect = remTextObj.GetComponent<RectTransform>();
+            // remTextRect.anchorMin = Vector2.zero;
+            // remTextRect.anchorMax = Vector2.one;
+            // remTextRect.offsetMin = Vector2.zero;
+            // remTextRect.offsetMax = Vector2.zero;
 
-            var remTMP = remTextObj.AddComponent<TextMeshProUGUI>();
-            remTMP.text = "X";
-            remTMP.fontSize = 14;
-            remTMP.fontStyle = FontStyles.Bold;
-            remTMP.alignment = TextAlignmentOptions.Center;
-            remTMP.color = Color.white;
+            // var remTMP = remTextObj.AddComponent<TextMeshProUGUI>();
+            // remTMP.text = "X";
+            // remTMP.fontSize = 14;
+            // remTMP.fontStyle = FontStyles.Bold;
+            // remTMP.alignment = TextAlignmentOptions.Center;
+            // remTMP.color = Color.white;
 
             return slot;
         }
@@ -204,17 +242,19 @@ namespace CometaChampions.Runtime.UI
         {
             if (currentProfile == null) return;
 
-            AudioManager.Instance.PlaySfx(SfxType.AutoCompleteDeck);
-            var autoDeck = DeckValidator.CreateDeckFromInventory(currentProfile);
             var activeDeck = GetActiveDeck();
-            if (activeDeck != null && autoDeck != null && autoDeck.Count == DeckValidator.ArenaRequiredDeckSize)
-            {
-                activeDeck.CardIds = autoDeck.Select(c => c.Id).ToList();
-                SaveManager.Save();
+            if (activeDeck == null) return;
+            activeDeck.CardIds ??= new List<string>();
 
-                RefreshGrid();
-                onDeckChangedCallback?.Invoke();
+            AudioManager.Instance.PlaySfx(SfxType.AutoCompleteDeck);
+            int added = DeckValidator.AutoCompleteDeckWithoutDuplicates(currentProfile, activeDeck.CardIds);
+            if (added > 0)
+            {
+                SaveManager.Save();
             }
+
+            RefreshGrid();
+            onDeckChangedCallback?.Invoke();
         }
     }
 }

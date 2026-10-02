@@ -283,7 +283,56 @@ namespace CometaChampions.Tests
             Assert.IsFalse(profile.SfxEnabled);
             Assert.IsFalse(profile.MusicEnabled);
         }
+
+        [Test]
+        public void AllCategories_ShareCostAttackAndHealthStats_AndCombatBehavior()
+        {
+            // 1. All 80 cards in CardCatalog (Heroes, Beasts, Trompos, Arenas) must have Cost > 0, BaseAttack > 0, BaseHealth > 0, and IsCreature == true
+            foreach (var def in CardCatalog.AllCards)
+            {
+                Assert.IsTrue(def.IsCreature, $"Card '{def.Id}' ({def.Category}) must have IsCreature == true.");
+                Assert.Greater(def.EnergyCost, 0, $"CardCatalog '{def.Id}' ({def.Name}) must have EnergyCost > 0.");
+                Assert.Greater(def.BaseAttack, 0, $"CardCatalog '{def.Id}' ({def.Name}) must have BaseAttack > 0.");
+                Assert.Greater(def.BaseHealth, 0, $"CardCatalog '{def.Id}' ({def.Name}) must have BaseHealth > 0.");
+            }
+
+            // 2. All 80 cards in CardShowcaseCatalog must have Cost > 0, Attack > 0, Defense > 0
+            foreach (var card in CardShowcaseCatalog.Cards)
+            {
+                Assert.Greater(card.Cost, 0, $"ShowcaseCardData '{card.Id}' ({card.Name}) must have Cost > 0.");
+                Assert.Greater(card.Attack, 0, $"ShowcaseCardData '{card.Id}' ({card.Name}) must have Attack > 0.");
+                Assert.Greater(card.Defense, 0, $"ShowcaseCardData '{card.Id}' ({card.Name}) must have Defense > 0.");
+            }
+
+            // 3. All 20 cards in MvpCardCatalog must have EnergyCost > 0, BaseAttack > 0, BaseHealth > 0
+            foreach (var mvp in MvpCardCatalog.AllCards)
+            {
+                Assert.IsTrue(mvp.IsCreature, $"MvpCardCatalog '{mvp.Id}' ({mvp.Category}) must have IsCreature == true.");
+                Assert.Greater(mvp.EnergyCost, 0, $"MvpCardCatalog '{mvp.Id}' ({mvp.Name}) must have EnergyCost > 0.");
+                Assert.Greater(mvp.BaseAttack, 0, $"MvpCardCatalog '{mvp.Id}' ({mvp.Name}) must have BaseAttack > 0.");
+                Assert.Greater(mvp.BaseHealth, 0, $"MvpCardCatalog '{mvp.Id}' ({mvp.Name}) must have BaseHealth > 0.");
+            }
+
+            // 4. Verify Trompos and Arenas behave identically to Champions and Beasts in ArenaPowerCalculator (Clan advantage +1 & Arena affinity +1)
+            var neutralLocation = new CardDefinition("LOC_NEUTRAL", "Neutral Location", CardCategory.Arena, ClanType.Neutral, 0, 0, 0);
+            var milenariosLocation = new CardDefinition("LOC_MIL", "Santuario Milenario", CardCategory.Arena, ClanType.Milenarios, 0, 0, 0);
+            var fugitivoEnemy = new CardDefinition("ENEMY_FUG", "Fugitivo Rival", CardCategory.Champion, ClanType.Fugitivos, 2, 3, 3);
+
+            var trompoAzteca = CardCatalog.GetCardById("TROMPO_AZTECA")!;
+            var arenaValle = CardCatalog.GetCardById("ARENA_VALLE_PRUEBAS")!;
+
+            // Trompo Azteca (Milenarios, ATK 4) vs Fugitivos (+1 clan advantage) in Milenarios location (+1 affinity) = 6
+            int trompoPower = CometaChampions.Core.Rules.ArenaPowerCalculator.CalculateCardEffectivePower(
+                trompoAzteca, milenariosLocation, new[] { fugitivoEnemy });
+            Assert.AreEqual(trompoAzteca.BaseAttack + 2, trompoPower, "Trompo must receive +1 Clan advantage and +1 Arena affinity based on its BaseAttack and Clan.");
+
+            // Arena Valle de Pruebas (Milenarios, ATK 2) vs Fugitivos (+1 clan advantage) in Milenarios location (+1 affinity) = 4
+            int arenaPower = CometaChampions.Core.Rules.ArenaPowerCalculator.CalculateCardEffectivePower(
+                arenaValle, milenariosLocation, new[] { fugitivoEnemy });
+            Assert.AreEqual(arenaValle.BaseAttack + 2, arenaPower, "Arena card played in lane must receive +1 Clan advantage and +1 Arena affinity based on its BaseAttack and Clan.");
+        }
     }
 }
+
 
 

@@ -30,8 +30,8 @@ namespace CometaChampions.Core.Rules
 
             int power = card.Power;
 
-            // Physical Trompos functioning as support items grant power based on energy cost if base attack is default
-            if (card.Category == CardCategory.PhysicalTrompo && card.Power <= 0)
+            // Fallback only if a card definition was initialized with Power <= 0
+            if (power <= 0 && card.EnergyCost > 0)
             {
                 power = Math.Max(2, card.EnergyCost + 1);
             }
@@ -97,13 +97,10 @@ namespace CometaChampions.Core.Rules
             if (!instance.IsRevealed) return 0; // Unrevealed cards contribute 0 power until turn resolution
 
             var card = instance.Card;
-            int power = card.Power + instance.PowerModifier;
-
-            // Physical Trompos fallback
-            if (card.Category == CardCategory.PhysicalTrompo && card.Power <= 0)
-            {
-                power = Math.Max(2, card.EnergyCost + 1) + instance.PowerModifier;
-            }
+            int basePower = card.Power > 0 || card.EnergyCost <= 0
+                ? card.Power
+                : Math.Max(2, card.EnergyCost + 1);
+            int power = basePower + instance.PowerModifier;
 
             // 1. Arena rules & Affinity
             if (arena != null)

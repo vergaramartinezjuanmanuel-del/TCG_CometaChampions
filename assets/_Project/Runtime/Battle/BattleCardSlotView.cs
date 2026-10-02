@@ -78,10 +78,10 @@ namespace CometaChampions.Runtime.Battle
                     cardThumbnail.sprite = null;
                 }
 
-                if (slotFrame != null)
-                {
-                    slotFrame.color = new Color(1f, 1f, 1f, 0.15f);
-                }
+                // if (slotFrame != null)
+                // {
+                //     slotFrame.color = new Color(1f, 1f, 1f, 0.15f);
+                // }
 
                 if (powerBadgeRoot != null) powerBadgeRoot.SetActive(false);
                 if (undoBadgeRoot != null) undoBadgeRoot.SetActive(false);

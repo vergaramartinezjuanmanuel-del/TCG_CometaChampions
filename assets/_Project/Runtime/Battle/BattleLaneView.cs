@@ -104,11 +104,11 @@ namespace CometaChampions.Runtime.Battle
             if (arenaBackground != null)
             {
                 var sprite = Card3D.GetFlatArtSprite(arena);
-                if (sprite != null)
-                {
-                    arenaBackground.sprite = sprite;
-                    arenaBackground.color = new Color(0.35f, 0.40f, 0.50f, 0.9f);
-                }
+                // if (sprite != null)
+                // {
+                //     arenaBackground.sprite = sprite;
+                //     arenaBackground.color = new Color(0.35f, 0.40f, 0.50f, 0.9f);
+                // }
             }
         }
 

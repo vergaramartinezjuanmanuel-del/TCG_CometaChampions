@@ -168,9 +168,7 @@ namespace CometaChampions.Runtime.Battle
 
             if (attackText != null)
             {
-                int pwr = card.Category == CardCategory.PhysicalTrompo
-                    ? Math.Max(2, card.EnergyCost + 1)
-                    : card.Power;
+                int pwr = card.Power > 0 ? card.Power : Math.Max(2, card.EnergyCost + 1);
                 attackText.text = $"{pwr}";
                 attackText.raycastTarget = false;
                 if (attackText.transform.parent != null && attackText.transform.parent != transform)

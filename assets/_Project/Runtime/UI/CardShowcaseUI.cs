@@ -261,25 +261,10 @@ namespace CometaChampions.Runtime.UI
                 }
             }
 
-            // Stats Chip
+            // Stats Chip (Unified for Heroes, Beasts, Trompos, and Arenas)
             if (cardStatsText != null)
             {
-                if (card.Category.Equals("champions", StringComparison.OrdinalIgnoreCase))
-                {
-                    cardStatsText.text = $"Costo: {card.Cost}   •   ATK: {card.Attack}   •   DEF: {card.Defense}";
-                }
-                else if (card.Category.Equals("kombat", StringComparison.OrdinalIgnoreCase))
-                {
-                    cardStatsText.text = $"Tipo: {card.CardType}   •   ATK: +{card.Attack}";
-                }
-                else if (card.Category.Equals("trompos", StringComparison.OrdinalIgnoreCase))
-                {
-                    cardStatsText.text = $"Línea: {card.CardType}   •   DEF: {card.Defense}";
-                }
-                else
-                {
-                    cardStatsText.text = $"{card.CardType}";
-                }
+                cardStatsText.text = $"Costo: {card.Cost}   •   ATK: {card.Attack}   •   HP: {card.Defense}";
             }
 
             if (cardRarityText != null) cardRarityText.text = $"Rareza: {card.Rarity}";

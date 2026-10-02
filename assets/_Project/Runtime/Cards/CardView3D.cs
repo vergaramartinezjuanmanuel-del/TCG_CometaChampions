@@ -63,15 +63,10 @@ namespace CometaChampions.Runtime.Cards
             if (nameText != null) nameText.text = definition.Name;
             if (costText != null) costText.text = definition.EnergyCost.ToString();
 
-            bool showCombatStats = definition.IsCreature;
-            if (attackBadge != null) attackBadge.SetActive(showCombatStats);
-            if (healthBadge != null) healthBadge.SetActive(showCombatStats);
-
-            if (showCombatStats)
-            {
-                if (attackText != null) attackText.text = definition.BaseAttack.ToString();
-                if (healthText != null) healthText.text = definition.BaseHealth.ToString();
-            }
+            if (attackBadge != null) attackBadge.SetActive(true);
+            if (healthBadge != null) healthBadge.SetActive(true);
+            if (attackText != null) attackText.text = definition.BaseAttack.ToString();
+            if (healthText != null) healthText.text = definition.BaseHealth.ToString();
 
             if (abilityText != null)
             {

@@ -14,15 +14,24 @@ namespace CometaChampions.Tests
         {
             var profile = PlayerProfile.CreateDefaultProfile();
 
+            Assert.AreEqual(0, profile.GoldCoins);
             Assert.AreEqual(PlayerProfile.DefaultInitialGold, profile.GoldCoins);
+            Assert.AreEqual(0, profile.EsenciaCometa);
             Assert.AreEqual(PlayerProfile.DefaultInitialDust, profile.EsenciaCometa);
+            Assert.AreEqual(1, profile.BoosterPacks);
             Assert.AreEqual(PlayerProfile.DefaultInitialPacks, profile.BoosterPacks);
             Assert.AreEqual(1, profile.ConsecutiveLoginDays);
             StringAssert.IsMatch(@"^Guest\d{3}$", profile.PlayerName, "Default player name must be Guest + 3-digit number (e.g. Guest123)");
-            Assert.IsTrue(profile.IsCardUnlocked("CHAMP_ESPECTRO"));
-            Assert.AreEqual(5, profile.GetDuplicateCopies("CHAMP_ESPECTRO"), "Espectro should have 5 copies to be immediately upgradable.");
-            Assert.AreEqual(2, profile.GetDuplicateCopies("CHAMP_AZTECA"));
-            Assert.AreEqual(1, profile.GetFoilLevel("CHAMP_ESPECTRO"));
+
+            // Verify exactly 4 starter cards unlocked (1 per category and 1 per clan), each with 1 copy
+            int unlockedCount = profile.Inventory.Values.Count(e => e.IsUnlocked);
+            Assert.AreEqual(4, unlockedCount, "Default profile must start with exactly 4 unlocked cards.");
+            Assert.IsTrue(profile.IsCardUnlocked("CHAMP_DRAKY"));
+            Assert.IsTrue(profile.IsCardUnlocked("BEAST_COMETIN"));
+            Assert.IsTrue(profile.IsCardUnlocked("TROMPO_AVISPON"));
+            Assert.IsTrue(profile.IsCardUnlocked("ARENA_SANTUARIO_SOL"));
+            Assert.AreEqual(1, profile.GetDuplicateCopies("CHAMP_DRAKY"));
+            Assert.AreEqual(1, profile.GetFoilLevel("CHAMP_DRAKY"));
         }
 
         [Test]
@@ -229,8 +238,10 @@ namespace CometaChampions.Tests
             original.ConsecutiveLoginDays = 4;
 
             // Upgrade a card to foil 2
-            original.GetOrCreateEntry("CHAMP_ESPECTRO").FoilLevel = 2;
-            original.GetOrCreateEntry("CHAMP_ESPECTRO").DuplicateCopies = 3;
+            var espectro = original.GetOrCreateEntry("CHAMP_ESPECTRO");
+            espectro.IsUnlocked = true;
+            espectro.FoilLevel = 2;
+            espectro.DuplicateCopies = 3;
 
             string json = JsonConvert.SerializeObject(original, Formatting.Indented);
             Assert.IsNotNull(json);
@@ -364,7 +375,11 @@ namespace CometaChampions.Tests
         public void TryUpgradeFoil_AwardsAccountProgressionXp()
         {
             var profile = PlayerProfile.CreateDefaultProfile();
-            // Espectro starts at Foil 1 with 5 copies, ready to upgrade
+            profile.GoldCoins = 200;
+            var entry = profile.GetOrCreateEntry("CHAMP_ESPECTRO");
+            entry.IsUnlocked = true;
+            entry.DuplicateCopies = 5;
+
             Assert.AreEqual(1, profile.AccountLevel);
             Assert.AreEqual(0, profile.CurrentLevelXp);
 
@@ -498,7 +513,7 @@ namespace CometaChampions.Tests
             var all = AvatarCatalog.GetAll();
             Assert.AreEqual(20, all.Count, "Catalog must contain exactly 20 avatars mapping to champion art.");
 
-            // Level 1 starter tier: 5 avatars (3 free, 2 paid)
+            // Level 1 starter tier: 3 avatars (1 free, 2 paid)
             var level1Avatars = AvatarCatalog.GetAll();
             int lvl1Count = 0;
             int lvl1FreeCount = 0;
@@ -510,8 +525,8 @@ namespace CometaChampions.Tests
                     if (a.IsFree) lvl1FreeCount++;
                 }
             }
-            Assert.AreEqual(5, lvl1Count, "Level 1 must have 5 avatars.");
-            Assert.AreEqual(3, lvl1FreeCount, "Level 1 must have 3 free avatars.");
+            Assert.AreEqual(3, lvl1Count, "Level 1 must have 3 avatars.");
+            Assert.AreEqual(1, lvl1FreeCount, "Level 1 must have 1 free avatar (Cometín).");
 
             var maxLvlAvatar = AvatarCatalog.GetAvatarById("AVATAR_TURBO_FLASH");
             Assert.IsNotNull(maxLvlAvatar);
@@ -526,10 +541,11 @@ namespace CometaChampions.Tests
 
             Assert.AreEqual("AVATAR_COMETIN", profile.SelectedAvatarId);
             Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_COMETIN"));
-            Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_ESPECTRO"));
-            Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_AVISPON"));
+            Assert.AreEqual(1, profile.UnlockedAvatarIds.Count, "New profile starts with only 1 unlocked avatar.");
 
-            // Paid or higher level avatars are not unlocked
+            // Paid or higher level avatars are not unlocked at start
+            Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_ESPECTRO"));
+            Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_AVISPON"));
             Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_AZTECA"));
             Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_DRAKY"));
         }
@@ -538,6 +554,7 @@ namespace CometaChampions.Tests
         public void TryPurchaseAvatar_Succeeds_WhenLevelAndGoldMet()
         {
             var profile = PlayerProfile.CreateDefaultProfile();
+            profile.GoldCoins = 500;
             int startingGold = profile.GoldCoins;
 
             bool success = profile.TryPurchaseAvatar("AVATAR_AZTECA", out var failureReason);
@@ -582,18 +599,23 @@ namespace CometaChampions.Tests
         {
             var profile = PlayerProfile.CreateDefaultProfile(); // Level 1
             Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_DRAKY"), "Draky is locked at Level 1.");
+            Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_ESPECTRO"), "Espectro is locked at Level 1.");
+            Assert.IsFalse(profile.IsAvatarUnlocked("AVATAR_AVISPON"), "Avispón is locked at Level 1.");
 
             // Add XP to level up to Level 2 (100 XP required)
             profile.AddAccountExperience(100);
 
             Assert.AreEqual(2, profile.AccountLevel);
             Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_DRAKY"), "Draky (free) should auto-unlock upon reaching Level 2.");
+            Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_ESPECTRO"), "Espectro (free) should auto-unlock upon reaching Level 2.");
+            Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_AVISPON"), "Avispón (free) should auto-unlock upon reaching Level 2.");
         }
 
         [Test]
         public void TryEquipAvatar_Succeeds_WhenUnlocked_FailsWhenLocked()
         {
             var profile = PlayerProfile.CreateDefaultProfile();
+            profile.AddAccountExperience(100); // Reach Level 2 to unlock Espectro
 
             // Equip unlocked Espectro
             bool equipEspectro = profile.TryEquipAvatar("AVATAR_ESPECTRO", out var reason1);
@@ -611,6 +633,7 @@ namespace CometaChampions.Tests
         public void AvatarState_PersistsThroughJsonSerialization()
         {
             var profile = PlayerProfile.CreateDefaultProfile();
+            profile.GoldCoins = 500;
             profile.TryPurchaseAvatar("AVATAR_AZTECA", out _);
             Assert.AreEqual("AVATAR_AZTECA", profile.SelectedAvatarId);
 
@@ -818,6 +841,51 @@ namespace CometaChampions.Tests
             // 6. Skipped Day 4, arrived at Day 5: streak broken, evaluates to Day 1
             Assert.IsTrue(profile.CanClaimDailyReward(day5));
             Assert.AreEqual(1, profile.GetCurrentDailyRewardDayIndex(day5));
+        }
+
+        [Test]
+        public void FirstTimeOnboarding_ReachesFirstCombatThreshold()
+        {
+            // Step 0: Create default profile
+            var profile = PlayerProfile.CreateDefaultProfile();
+            Assert.AreEqual(4, profile.Inventory.Values.Count(e => e.IsUnlocked), "Must start with 4 unlocked cards.");
+            Assert.AreEqual(0, profile.GoldCoins, "Must start with 0 gold.");
+            Assert.AreEqual(0, profile.EsenciaCometa, "Must start with 0 esencia.");
+            Assert.AreEqual(1, profile.BoosterPacks, "Must start with 1 free booster pack.");
+            Assert.AreEqual(0, profile.RewardPacks, "Must start with 0 reward packs.");
+            Assert.AreEqual(1, profile.AccountLevel, "Must start at Account Level 1.");
+            Assert.AreEqual(1, profile.UnlockedAvatarIds.Count, "Must start with 1 unlocked avatar (Cometín).");
+            Assert.IsTrue(profile.IsAvatarUnlocked("AVATAR_COMETIN"));
+
+            // Step 1: Open the free welcome booster pack (5 cards)
+            bool openedWelcomePack = profile.TryOpenBoosterPack(out var welcomePackResult, out var packError);
+            Assert.IsTrue(openedWelcomePack, packError);
+            Assert.AreEqual(0, profile.BoosterPacks);
+            Assert.AreEqual(5, welcomePackResult.Cards.Count);
+            Assert.GreaterOrEqual(profile.Inventory.Values.Count(e => e.IsUnlocked), 8, "Should have at least 8-9 unlocked cards after opening welcome pack.");
+            Assert.GreaterOrEqual(profile.AccountLevel, 2, "Opening welcome pack should grant enough XP to reach at least Level 2.");
+            Assert.GreaterOrEqual(profile.RewardPacks, 1, "Reaching Level 2 must grant a Level Reward Pack.");
+            Assert.AreEqual(4, profile.UnlockedAvatarIds.Count, "Reaching Level 2 must unlock Draky, Espectro, and Avispón (4 total avatars).");
+
+            // Step 2: Open the Level 2 Reward Pack (3 cards)
+            bool openedRewardPack = profile.TryOpenRewardPack(out var rewardPackResult, out var rewardError);
+            Assert.IsTrue(openedRewardPack, rewardError);
+            Assert.AreEqual(3, rewardPackResult.Cards.Count);
+
+            // Step 3: Claim Day 1 Daily Reward Pack
+            var claimTime = new DateTime(2026, 9, 30, 12, 0, 0, DateTimeKind.Utc);
+            var dailyResult = profile.ClaimDailyReward(claimTime);
+            Assert.AreEqual(1, dailyResult.DayIndex);
+            Assert.GreaterOrEqual(profile.GoldCoins, 250, "Player should have accumulated gold from level-ups and daily reward.");
+            Assert.GreaterOrEqual(profile.EsenciaCometa, 25, "Player should have accumulated at least 25 esencia from daily reward.");
+
+            // Verify player can now build a full, legal 12-card Arena Combat deck from unlocked inventory
+            int totalUnlockedUnique = profile.Inventory.Values.Count(e => e.IsUnlocked);
+            Assert.GreaterOrEqual(totalUnlockedUnique, 6, "At least 6 unique unlocked cards are required to form a 12-card deck (max 2 copies each).");
+
+            var combatDeck = CometaChampions.Core.Rules.DeckValidator.CreateDeckFromInventory(profile, new Random(42));
+            Assert.AreEqual(CometaChampions.Core.Rules.DeckValidator.ArenaRequiredDeckSize, combatDeck.Count, "Player must be able to assemble a full 12-card combat deck.");
+            Assert.IsTrue(CometaChampions.Core.Rules.DeckValidator.ValidateDeckOwnership(combatDeck, profile, out var deckErrors), string.Join("; ", deckErrors));
         }
     }
 }

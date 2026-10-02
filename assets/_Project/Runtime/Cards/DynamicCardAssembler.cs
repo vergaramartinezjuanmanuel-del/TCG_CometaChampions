@@ -148,7 +148,25 @@ namespace CometaChampions.Runtime.Cards
             var catalogEntry = CardShowcaseCatalog.GetCardByDefinition(definition);
             if (catalogEntry != null)
             {
-                return catalogEntry;
+                return new ShowcaseCardData
+                {
+                    Id = catalogEntry.Id,
+                    Name = catalogEntry.Name,
+                    Category = catalogEntry.Category,
+                    CategoryName = catalogEntry.CategoryName,
+                    Clan = catalogEntry.Clan,
+                    Cost = definition.EnergyCost > 0 ? definition.EnergyCost : catalogEntry.Cost,
+                    Attack = definition.BaseAttack > 0 ? definition.BaseAttack : catalogEntry.Attack,
+                    Defense = definition.BaseHealth > 0 ? definition.BaseHealth : catalogEntry.Defense,
+                    Image = catalogEntry.Image,
+                    Rarity = catalogEntry.Rarity,
+                    Quote = catalogEntry.Quote,
+                    Description = catalogEntry.Description,
+                    CardType = catalogEntry.CardType,
+                    Effect = !string.IsNullOrWhiteSpace(definition.AbilityText) ? definition.AbilityText : catalogEntry.Effect,
+                    RealProductFlavor = catalogEntry.RealProductFlavor,
+                    Lore = !string.IsNullOrWhiteSpace(definition.LoreText) ? definition.LoreText : catalogEntry.Lore
+                };
             }
 
             string categoryKey = definition.Category switch
@@ -314,13 +332,11 @@ namespace CometaChampions.Runtime.Cards
             nameText.fontSizeMax = 68f;
             nameText.overflowMode = TextOverflowModes.Ellipsis;
 
-            // Attack & Defense Badges on Right of Clan Band
+            // Attack & Defense Badges on Right of Clan Band (shown for all card types: Heroes, Beasts, Trompos, Arenas)
             var statsGroupGo = CreateChild("StatsGroup", nameBarGo.transform);
             SetRectFromTopLeft(statsGroupGo.GetComponent<RectTransform>(), 520f, 632f, 736f, 750f);
 
-            bool showStats = cardData.Attack > 0 || cardData.Defense > 0 ||
-                             cardData.Category.Equals("champions", StringComparison.OrdinalIgnoreCase) ||
-                             cardData.Category.Equals("kombat", StringComparison.OrdinalIgnoreCase);
+            bool showStats = true;
             statsGroupGo.SetActive(showStats);
 
             if (showStats)

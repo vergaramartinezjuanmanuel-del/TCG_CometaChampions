@@ -89,33 +89,13 @@ namespace CometaChampions.Core.Rules
                 return false;
             }
 
-            // Pay cost
+            // Pay cost and deploy card to board (all 4 categories behave uniformly in combat)
             activePlayer.SpendEnergy(card.Definition.EnergyCost);
             activePlayer.Hand.Remove(card);
 
-            switch (card.Definition.Category)
-            {
-                case CardCategory.Champion:
-                case CardCategory.KombatBeast:
-                    card.HasSummoningSickness = true;
-                    card.IsExhausted = false;
-                    activePlayer.Board.Add(card);
-                    break;
-
-                case CardCategory.Arena:
-                    if (match.ActiveArena != null)
-                    {
-                        // Send existing arena to its owner's graveyard
-                        activePlayer.Graveyard.Add(match.ActiveArena);
-                    }
-                    match.ActiveArena = card;
-                    break;
-
-                case CardCategory.PhysicalTrompo:
-                    // Instant / spell effect resolves, then goes to graveyard
-                    activePlayer.Graveyard.Add(card);
-                    break;
-            }
+            card.HasSummoningSickness = true;
+            card.IsExhausted = false;
+            activePlayer.Board.Add(card);
 
             return true;
         }

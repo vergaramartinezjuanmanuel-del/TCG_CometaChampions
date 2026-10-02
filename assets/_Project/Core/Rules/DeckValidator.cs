@@ -19,6 +19,7 @@ namespace CometaChampions.Core.Rules
 
         public const int ArenaRequiredDeckSize = 12;
         public const int ArenaMaxCopiesPerCard = 2;
+        public const int DuplicateCardDeckGoldCost = 50;
 
         public static bool Validate(IEnumerable<CardDefinition> deckCards, out List<string> errors)
         {
@@ -93,16 +94,7 @@ namespace CometaChampions.Core.Rules
             ValidateArenaDeck(cardsList, out var arenaErrors);
             errors.AddRange(arenaErrors);
 
-            // 2. Arenas cannot be in combat decks
-            foreach (var card in cardsList)
-            {
-                if (card.Category == CardCategory.Arena || card.Type == CardType.Arena)
-                {
-                    errors.Add($"Arena card '{card.Name}' ({card.Id}) cannot be included in a player's combat hand deck.");
-                }
-            }
-
-            // 3. Ownership check: every card must be unlocked in profile inventory
+            // 2. Ownership check: every card must be unlocked in profile inventory (all 4 card types allowed)
             var uniqueGroups = cardsList.GroupBy(c => c.Id);
             foreach (var group in uniqueGroups)
             {
@@ -146,6 +138,20 @@ namespace CometaChampions.Core.Rules
             if (cardId.Equals("BEAST_DIAMANTE", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("BEAST_LEVIATAN"))
                 return true;
 
+            // Alias check for Arenas
+            if (cardId.Equals("ARENA_TEMPLO", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_TEMPLO_MILENARIO"))
+                return true;
+            if (cardId.Equals("ARENA_TEMPLO_MILENARIO", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_TEMPLO"))
+                return true;
+            if (cardId.Equals("ARENA_PISTA", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_PISTA_CARRERAS"))
+                return true;
+            if (cardId.Equals("ARENA_PISTA_CARRERAS", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_PISTA"))
+                return true;
+            if (cardId.Equals("ARENA_LLANURAS", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_LLANURAS_TIRANO"))
+                return true;
+            if (cardId.Equals("ARENA_LLANURAS_TIRANO", StringComparison.OrdinalIgnoreCase) && profile.IsCardUnlocked("ARENA_LLANURAS"))
+                return true;
+
             return false;
         }
 
@@ -161,14 +167,14 @@ namespace CometaChampions.Core.Rules
 
             if (profile == null || profile.Inventory == null) return deck;
 
-            // 1. Gather all unlocked playable cards from profile inventory
+            // 1. Gather all unlocked playable cards from profile inventory (all 4 card categories allowed)
             var unlockedCards = new List<CardDefinition>();
             foreach (var kvp in profile.Inventory)
             {
                 if (!kvp.Value.IsUnlocked) continue;
 
                 var cardDef = MvpCardCatalog.GetCardById(kvp.Key) ?? CardCatalog.GetCardById(kvp.Key);
-                if (cardDef != null && cardDef.Category != CardCategory.Arena && cardDef.Type != CardType.Arena)
+                if (cardDef != null)
                 {
                     unlockedCards.Add(cardDef);
                 }
@@ -224,6 +230,167 @@ namespace CometaChampions.Core.Rules
             }
 
             return deck;
+        }
+
+        /// <summary>
+        /// Retrieves the number of copies of a card owned in the player profile, supporting ID aliases.
+        /// </summary>
+        public static int GetOwnedCopiesInProfile(PlayerProfile profile, string cardId)
+        {
+            if (profile == null || string.IsNullOrEmpty(cardId)) return 0;
+
+            int copies = profile.GetDuplicateCopies(cardId);
+            if (copies > 0) return copies;
+
+            if (cardId.StartsWith("HERO_", StringComparison.OrdinalIgnoreCase))
+            {
+                string champId = "CHAMP_" + cardId.Substring(5);
+                copies = profile.GetDuplicateCopies(champId);
+                if (copies > 0) return copies;
+            }
+            else if (cardId.StartsWith("CHAMP_", StringComparison.OrdinalIgnoreCase))
+            {
+                string heroId = "HERO_" + cardId.Substring(6);
+                copies = profile.GetDuplicateCopies(heroId);
+                if (copies > 0) return copies;
+            }
+
+            if (cardId.Equals("BEAST_LEVIATAN", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("BEAST_DIAMANTE");
+            if (cardId.Equals("BEAST_DIAMANTE", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("BEAST_LEVIATAN");
+            if (cardId.Equals("ARENA_TEMPLO", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_TEMPLO_MILENARIO");
+            if (cardId.Equals("ARENA_TEMPLO_MILENARIO", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_TEMPLO");
+            if (cardId.Equals("ARENA_PISTA", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_PISTA_CARRERAS");
+            if (cardId.Equals("ARENA_PISTA_CARRERAS", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_PISTA");
+            if (cardId.Equals("ARENA_LLANURAS", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_LLANURAS_TIRANO");
+            if (cardId.Equals("ARENA_LLANURAS_TIRANO", StringComparison.OrdinalIgnoreCase))
+                return profile.GetDuplicateCopies("ARENA_LLANURAS");
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Checks whether two card IDs refer to the same card (accounting for CHAMP_/HERO_ and Arena/Beast aliases).
+        /// </summary>
+        public static bool AreCardIdsEquivalent(string? idA, string? idB)
+        {
+            if (string.IsNullOrEmpty(idA) || string.IsNullOrEmpty(idB)) return false;
+            if (string.Equals(idA, idB, StringComparison.OrdinalIgnoreCase)) return true;
+
+            var defA = CardCatalog.GetCardById(idA!) ?? MvpCardCatalog.GetCardById(idA!);
+            var defB = CardCatalog.GetCardById(idB!) ?? MvpCardCatalog.GetCardById(idB!);
+            if (defA != null && defB != null && string.Equals(defA.Name, defB.Name, StringComparison.OrdinalIgnoreCase) && defA.Category == defB.Category)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to add a card to the player's combat deck.
+        /// - 1st copy of an unlocked card is free.
+        /// - 2nd copy (duplicate) requires owning at least 2 copies in inventory AND paying 50 Gold Coins.
+        /// - Maximum 2 copies per card and 12 cards total in deck.
+        /// </summary>
+        public static bool TryAddCardToDeck(PlayerProfile profile, IList<string> deckCardIds, string cardId, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (profile == null || deckCardIds == null || string.IsNullOrEmpty(cardId))
+            {
+                errorMessage = "Datos de perfil o mazo inválidos.";
+                return false;
+            }
+
+            if (deckCardIds.Count >= ArenaRequiredDeckSize)
+            {
+                errorMessage = $"Tu mazo ya está completo ({ArenaRequiredDeckSize}/{ArenaRequiredDeckSize} cartas).";
+                return false;
+            }
+
+            if (!IsCardUnlockedInProfile(profile, cardId))
+            {
+                errorMessage = "Esta tarjeta aún no está desbloqueada en tu inventario.";
+                return false;
+            }
+
+            int copiesInDeck = deckCardIds.Count(id => AreCardIdsEquivalent(id, cardId));
+            if (copiesInDeck >= ArenaMaxCopiesPerCard)
+            {
+                errorMessage = $"Solo puedes agregar un máximo de {ArenaMaxCopiesPerCard} veces la misma tarjeta al mazo.";
+                return false;
+            }
+
+            if (copiesInDeck == 0)
+            {
+                deckCardIds.Add(cardId);
+                return true;
+            }
+
+            // Adding a duplicate (2nd copy) requires >= 2 copies in inventory AND 50 Gold Coins
+            int ownedCopies = GetOwnedCopiesInProfile(profile, cardId);
+            if (ownedCopies < 2)
+            {
+                errorMessage = $"Para agregar una copia duplicada (2/2) al mazo necesitas tener al menos 2 copias de esta tarjeta en tu inventario (Tienes: {ownedCopies}) y {DuplicateCardDeckGoldCost} monedas de oro.";
+                return false;
+            }
+
+            if (profile.GoldCoins < DuplicateCardDeckGoldCost)
+            {
+                errorMessage = $"Para agregar una copia duplicada (2/2) al mazo necesitas {DuplicateCardDeckGoldCost} monedas de oro (Tienes: {profile.GoldCoins}).";
+                return false;
+            }
+
+            profile.GoldCoins -= DuplicateCardDeckGoldCost;
+            deckCardIds.Add(cardId);
+            return true;
+        }
+
+        /// <summary>
+        /// Auto-completes the given deck by preserving existing cards and filling empty slots (up to 12)
+        /// exclusively with random unlocked cards from inventory that are NOT already in the deck (0 duplicates added).
+        /// Returns the number of cards added.
+        /// </summary>
+        public static int AutoCompleteDeckWithoutDuplicates(PlayerProfile profile, IList<string> deckCardIds, Random? rng = null)
+        {
+            if (profile == null || profile.Inventory == null || deckCardIds == null) return 0;
+            if (deckCardIds.Count >= ArenaRequiredDeckSize) return 0;
+
+            var random = rng ?? new Random();
+
+            var candidateIds = new List<string>();
+            foreach (var kvp in profile.Inventory)
+            {
+                if (!kvp.Value.IsUnlocked) continue;
+
+                var cardDef = CardCatalog.GetCardById(kvp.Key) ?? MvpCardCatalog.GetCardById(kvp.Key);
+                if (cardDef == null) continue;
+
+                bool alreadyInDeck = deckCardIds.Any(existingId => AreCardIdsEquivalent(existingId, cardDef.Id) || AreCardIdsEquivalent(existingId, kvp.Key));
+
+                if (!alreadyInDeck && !candidateIds.Any(cId => AreCardIdsEquivalent(cId, cardDef.Id)))
+                {
+                    candidateIds.Add(cardDef.Id);
+                }
+            }
+
+            var shuffled = candidateIds.OrderBy(_ => random.Next()).ToList();
+            int addedCount = 0;
+
+            foreach (var id in shuffled)
+            {
+                if (deckCardIds.Count >= ArenaRequiredDeckSize) break;
+                deckCardIds.Add(id);
+                addedCount++;
+            }
+
+            return addedCount;
         }
     }
 }

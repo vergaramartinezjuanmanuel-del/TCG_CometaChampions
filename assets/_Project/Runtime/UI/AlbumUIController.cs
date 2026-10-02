@@ -158,16 +158,11 @@ namespace CometaChampions.Runtime.UI
                 }
             }
 
-            // 4. Populate Stats
+            // 4. Populate Stats (Shown for all card types: Heroes, Beasts, Trompos, Arenas)
             if (costStatText != null) costStatText.text = card.EnergyCost.ToString();
-
-            bool isCreature = card.IsCreature;
-            if (combatStatsContainer != null) combatStatsContainer.SetActive(isCreature);
-            if (isCreature)
-            {
-                if (attackStatText != null) attackStatText.text = card.BaseAttack.ToString();
-                if (healthStatText != null) healthStatText.text = card.BaseHealth.ToString();
-            }
+            if (combatStatsContainer != null) combatStatsContainer.SetActive(true);
+            if (attackStatText != null) attackStatText.text = card.BaseAttack.ToString();
+            if (healthStatText != null) healthStatText.text = card.BaseHealth.ToString();
 
             // 5. Populate Rules & Lore
             if (rulesText != null)

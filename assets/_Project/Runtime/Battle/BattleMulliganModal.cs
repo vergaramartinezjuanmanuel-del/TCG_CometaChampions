@@ -185,7 +185,7 @@ namespace CometaChampions.Runtime.Battle
 
                     if (cardCostTexts != null && i < cardCostTexts.Length && cardCostTexts[i] != null)
                     {
-                        cardCostTexts[i].text = $"<color=#30d158>COST {card.EnergyCost}</color>  |  <color=#ffd60a>PWR {card.Power}</color>";
+                        cardCostTexts[i].text = $"<color=#30d158>COST {card.EnergyCost}</color>  |  <color=#ffd60a>ATK {card.BaseAttack}</color>  |  <color=#5ac8fa>HP {card.BaseHealth}</color>";
                     }
 
                     bool isSelected = selectedIndices.Contains(i);
@@ -357,7 +357,7 @@ namespace CometaChampions.Runtime.Battle
 
             if (cardCostTexts != null && slotIndex < cardCostTexts.Length && cardCostTexts[slotIndex] != null)
             {
-                cardCostTexts[slotIndex].text = $"<color=#30d158>COST {newCard.EnergyCost}</color>  |  <color=#ffd60a>PWR {newCard.Power}</color>";
+                cardCostTexts[slotIndex].text = $"<color=#30d158>COST {newCard.EnergyCost}</color>  |  <color=#ffd60a>ATK {newCard.BaseAttack}</color>  |  <color=#5ac8fa>HP {newCard.BaseHealth}</color>";
             }
 
             // Highlight background on the new card

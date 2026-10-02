@@ -444,14 +444,14 @@ namespace CometaChampions.Core.Models
 
         private static void RegisterArenas()
         {
-            // 18. Templo Milenario (Milenarios)
+            // 18. Templo Milenario (Milenarios, Cost 4, Power 4)
             Register(new CardDefinition(
                 "ARENA_TEMPLO",
                 "Templo Milenario",
                 CardType.Arena,
                 ClanType.Milenarios,
-                energyCost: 0,
-                power: 0,
+                energyCost: 4,
+                power: 4,
                 ability: new CardAbility(
                     AbilityTrigger.Passive,
                     AbilityEffectType.ClanSynergyBuff,
@@ -460,17 +460,18 @@ namespace CometaChampions.Core.Models
                 ),
                 imagePath: "Arena_Export/Templo Milenario.png",
                 loreText: "Ruinas sagradas impregnadas de poder milenario.",
-                iconicQuote: "La sabiduría de mil años protege esta tierra."
+                iconicQuote: "La sabiduría de mil años protege esta tierra.",
+                rarity: CardRarity.Epic
             ));
 
-            // 19. Pista Draconia (Fugitivos)
+            // 19. Pista Draconia (Fugitivos, Cost 2, Power 3)
             Register(new CardDefinition(
                 "ARENA_PISTA",
                 "Pista Draconia",
                 CardType.Arena,
                 ClanType.Fugitivos,
-                energyCost: 0,
-                power: 0,
+                energyCost: 2,
+                power: 3,
                 ability: new CardAbility(
                     AbilityTrigger.Passive,
                     AbilityEffectType.ClanSynergyBuff,
@@ -479,17 +480,18 @@ namespace CometaChampions.Core.Models
                 ),
                 imagePath: "Arena_Export/La Pista de Carreras.png",
                 loreText: "Circuito de alta velocidad donde los más rápidos dominan.",
-                iconicQuote: "¡Solo los veloces reclaman la victoria!"
+                iconicQuote: "¡Solo los veloces reclaman la victoria!",
+                rarity: CardRarity.Common
             ));
 
-            // 20. Llanuras del Tirano (Depredadores)
+            // 20. Llanuras del Tirano (Depredadores, Cost 6, Power 6)
             Register(new CardDefinition(
                 "ARENA_LLANURAS",
                 "Llanuras del Tirano",
                 CardType.Arena,
                 ClanType.Depredadores,
-                energyCost: 0,
-                power: 0,
+                energyCost: 6,
+                power: 6,
                 ability: new CardAbility(
                     AbilityTrigger.Passive,
                     AbilityEffectType.ConditionalBuff,
@@ -498,7 +500,8 @@ namespace CometaChampions.Core.Models
                 ),
                 imagePath: "Arena_Export/Llanuras del Tirano.png",
                 loreText: "Tierras salvajes donde los depredadores cazan sin tregua.",
-                iconicQuote: "¡El más fuerte reina en estas llanuras!"
+                iconicQuote: "¡El más fuerte reina en estas llanuras!",
+                rarity: CardRarity.Epic
             ));
         }
 
@@ -513,7 +516,7 @@ namespace CometaChampions.Core.Models
             var random = rng ?? new Random();
             var deck = new List<CardDefinition>();
 
-            var playablePool = AllCardsList.Where(c => c.Type != CardType.Arena).ToList();
+            var playablePool = AllCardsList.ToList();
 
             // Desired curve:
             // 2x Cost 1

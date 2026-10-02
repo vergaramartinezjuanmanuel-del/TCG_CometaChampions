@@ -68,10 +68,10 @@ namespace CometaChampions.Core.Models
         public string ImagePath { get; set; } = string.Empty;
 
         /// <summary>
-        /// True if this card participates in creature combat with Health and Attack stats.
-        /// Trompos and Arenas do not have health or attack stats.
+        /// True if this card participates in combat with Cost, Attack, and Health stats.
+        /// All 4 categories (Champion, KombatBeast, PhysicalTrompo, Arena) share these stats uniformly.
         /// </summary>
-        public bool IsCreature => Category == CardCategory.Champion || Category == CardCategory.KombatBeast;
+        public bool IsCreature => true;
         public int Attack => BaseAttack;
         public int Health => BaseHealth;
 

@@ -12,9 +12,9 @@ namespace CometaChampions.Core.Models
     [Serializable]
     public class PlayerProfile
     {
-        public const int DefaultInitialGold = 1256;
-        public const int DefaultInitialDust = 150;
-        public const int DefaultInitialPacks = 3;
+        public const int DefaultInitialGold = 0;
+        public const int DefaultInitialDust = 0;
+        public const int DefaultInitialPacks = 1;
         public const int RequiredCopiesForFoilUpgrade = 5;
         public const int GoldCostPerFoilUpgrade = 120;
 
@@ -678,39 +678,24 @@ namespace CometaChampions.Core.Models
                 ConsecutiveLoginDays = 1
             };
 
-            // Starter cards from UI_test.png
+            // 4 balanced starter cards: 1 per category and 1 per clan
             var starterCards = new[]
             {
-                "CHAMP_ESPECTRO",
-                "CHAMP_AZTECA",
-                "CHAMP_JUMBO_COBRA",
-                "CHAMP_DRAKY",
-                "CHAMP_ORION",
-                "TROMPO_ESPECTRO",
-                "TROMPO_AZTECA",
-                "BEAST_ESPECTRO",
-                "ARENA_TEMPLO_MILENARIO"
+                "CHAMP_DRAKY",           // Champion – Fugitivos (Cost 3, ATK 2, HP 4)
+                "BEAST_COMETIN",         // Beast – Milenarios (Cost 3, ATK 3, HP 3)
+                "TROMPO_AVISPON",        // Trompo – Depredadores (Cost 2, ATK 3, HP 2)
+                "ARENA_SANTUARIO_SOL"    // Arena – Míticos (Cost 3, ATK 3, HP 3)
             };
 
-            // Register all cards in catalog, setting starters as unlocked with 2 duplicates (2/5 for foil upgrade)
-            // Espectro starts with 5 copies (5/5) so it is immediately upgradable to Foil
+            // Register all cards in catalog, setting the 4 starters as unlocked with 1 copy each
             foreach (var card in CardCatalog.AllCards)
             {
                 bool isStarter = starterCards.Contains(card.Id, StringComparer.OrdinalIgnoreCase);
-                int initialCopies = 0;
-                if (string.Equals(card.Id, "CHAMP_ESPECTRO", StringComparison.OrdinalIgnoreCase))
-                {
-                    initialCopies = 5; // Ready to upgrade to Foil immediately
-                }
-                else if (isStarter)
-                {
-                    initialCopies = 2;
-                }
 
                 profile.Inventory[card.Id] = new CardInventoryEntry(
                     card.Id,
                     isUnlocked: isStarter,
-                    initialCopies: initialCopies,
+                    initialCopies: isStarter ? 1 : 0,
                     foilLevel: 1);
             }
 
