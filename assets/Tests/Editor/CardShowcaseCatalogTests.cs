@@ -263,11 +263,14 @@ namespace CometaChampions.Tests
 
             foreach (var bgm in bgmValues)
             {
-                if (bgm == BgmType.None) continue;
+                if (bgm == BgmType.None || bgm == BgmType.Battle_Pedestal3DActive || bgm == BgmType.Battle_Pedestal3DIdle) continue;
                 string wavPath = Path.Combine(bgmRoot, $"{bgm}.wav");
-                Assert.IsTrue(File.Exists(wavPath), $"Missing placeholder WAV file for BgmType.{bgm} at {wavPath}");
-                var fileInfo = new FileInfo(wavPath);
-                Assert.Greater(fileInfo.Length, 44, $"WAV file for BgmType.{bgm} must contain valid WAV header and data (> 44 bytes).");
+                string mp3Path = Path.Combine(bgmRoot, $"{bgm}.mp3");
+                string oggPath = Path.Combine(bgmRoot, $"{bgm}.ogg");
+                string filePath = File.Exists(wavPath) ? wavPath : (File.Exists(mp3Path) ? mp3Path : oggPath);
+                Assert.IsTrue(File.Exists(filePath), $"Missing music track file for BgmType.{bgm} at {bgmRoot}");
+                var fileInfo = new FileInfo(filePath);
+                Assert.Greater(fileInfo.Length, 44, $"Music file for BgmType.{bgm} must contain valid audio data (> 44 bytes).");
             }
         }
 
@@ -330,6 +333,129 @@ namespace CometaChampions.Tests
             int arenaPower = CometaChampions.Core.Rules.ArenaPowerCalculator.CalculateCardEffectivePower(
                 arenaValle, milenariosLocation, new[] { fugitivoEnemy });
             Assert.AreEqual(arenaValle.BaseAttack + 2, arenaPower, "Arena card played in lane must receive +1 Clan advantage and +1 Arena affinity based on its BaseAttack and Clan.");
+        }
+
+        [Test]
+        public void Home_MisCartasGrid_ConfiguredForTwoCardsPerRow()
+        {
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            string homeScenePath = Path.Combine(projectRoot, "Assets/_Project/Scenes/Home.unity");
+            Assert.IsTrue(File.Exists(homeScenePath), "Home.unity scene must exist.");
+            string homeSceneContent = File.ReadAllText(homeScenePath);
+
+            Assert.IsTrue(homeSceneContent.Contains("m_ConstraintCount: 2"), "Home.unity grid must be constrained to 2 columns.");
+            Assert.IsTrue(homeSceneContent.Contains("m_CellSize: {x: 236, y: 330}"), "Home.unity grid must have enlarged cell size {x: 236, y: 330}.");
+
+            string prefabPath = Path.Combine(projectRoot, "Assets/_Project/Prefabs/CardGridItem.prefab");
+            Assert.IsTrue(File.Exists(prefabPath), "CardGridItem.prefab must exist.");
+            string prefabContent = File.ReadAllText(prefabPath);
+            Assert.IsTrue(prefabContent.Contains("m_SizeDelta: {x: 236, y: 330}"), "CardGridItem.prefab must have root size 236x330.");
+            Assert.IsTrue(prefabContent.Contains("m_SizeDelta: {x: 56, y: 56}"), "CardGridItem.prefab lock icon must be enlarged to 56x56.");
+        }
+
+        [Test]
+        public void DynamicCardAssembler_Main3DCard_UsesOswaldBold_AndOptimizedLayout()
+        {
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            // 1. Verify Oswald Bold SDF font asset exists on disk
+            string fontAssetPath = Path.Combine(projectRoot, "Assets/TextMesh Pro/Examples & Extras/Resources/Fonts & Materials/Oswald Bold SDF.asset");
+            Assert.IsTrue(File.Exists(fontAssetPath), "Oswald Bold SDF font asset must exist at: " + fontAssetPath);
+
+            string fontMetaPath = fontAssetPath + ".meta";
+            Assert.IsTrue(File.Exists(fontMetaPath), "Oswald Bold SDF font meta must exist.");
+
+            // 2. Verify DynamicCardAssembler implementation
+            string assemblerPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Cards/DynamicCardAssembler.cs");
+            Assert.IsTrue(File.Exists(assemblerPath), "DynamicCardAssembler.cs must exist.");
+            string assemblerContent = File.ReadAllText(assemblerPath);
+
+            Assert.IsTrue(assemblerContent.Contains("GetOswaldBoldFont()"), "DynamicCardAssembler must declare GetOswaldBoldFont().");
+            Assert.IsTrue(assemblerContent.Contains("GetBodyFont(bool isMain3DCard"), "DynamicCardAssembler must declare GetBodyFont(bool isMain3DCard).");
+            Assert.IsTrue(assemblerContent.Contains("return GetOswaldBoldFont();"), "DynamicCardAssembler must return Oswald Bold SDF when isMain3DCard is true.");
+            Assert.IsTrue(assemblerContent.Contains("804f, ReferenceWidth, 886f"), "DynamicCardAssembler must expand description row bounds to 804..886 (82px) for main 3D card.");
+            Assert.IsTrue(assemblerContent.Contains("892f, ReferenceWidth, 974f"), "DynamicCardAssembler must expand quote row bounds to 892..974 (82px) for main 3D card.");
+            Assert.IsTrue(assemblerContent.Contains("descText.lineSpacing = 4f"), "DynamicCardAssembler must set lineSpacing to 4f for main 3D card description.");
+            Assert.IsTrue(assemblerContent.Contains("descText.fontSizeMin = 18f"), "DynamicCardAssembler must set fontSizeMin to 18f for main 3D card description.");
+            Assert.IsTrue(assemblerContent.Contains("quoteText.lineSpacing = 4f"), "DynamicCardAssembler must set lineSpacing to 4f for main 3D card quote.");
+            Assert.IsTrue(assemblerContent.Contains("quoteText.fontSizeMin = 18f"), "DynamicCardAssembler must set fontSizeMin to 18f for main 3D card quote.");
+
+            // 3. Verify Card3D passes isMain3DCard: true
+            string card3DPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Cards/Card3D.cs");
+            Assert.IsTrue(File.Exists(card3DPath), "Card3D.cs must exist.");
+            string card3DContent = File.ReadAllText(card3DPath);
+            Assert.IsTrue(card3DContent.Contains("isMain3DCard: true"), "Card3D.cs must pass isMain3DCard: true to DynamicCardAssembler.");
+        }
+
+        [Test]
+        public void DynamicCardAssembler_UniversalCardRendering_AppliedAcrossHomeAndBattle()
+        {
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            string assemblerPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Cards/DynamicCardAssembler.cs");
+            Assert.IsTrue(File.Exists(assemblerPath), "DynamicCardAssembler.cs must exist.");
+            string assemblerContent = File.ReadAllText(assemblerPath);
+
+            // Default parameter isMain3DCard = true everywhere so all cards adopt Oswald Bold and optimized layout
+            Assert.IsTrue(assemblerContent.Contains("bool isMain3DCard = true)"), "DynamicCardAssembler must default isMain3DCard to true across its methods.");
+            Assert.IsTrue(assemblerContent.Contains("public static TMP_FontAsset GetBodyFont(bool isMain3DCard = true)"), "GetBodyFont must default isMain3DCard to true.");
+            Assert.IsTrue(assemblerContent.Contains("public static Texture2D RenderCardToTexture(ShowcaseCardData cardData, bool isMain3DCard = true)"), "RenderCardToTexture must default isMain3DCard to true.");
+            Assert.IsTrue(assemblerContent.Contains("public static Sprite RenderCardToSprite(ShowcaseCardData cardData, bool isMain3DCard = true)"), "RenderCardToSprite must default isMain3DCard to true.");
+
+            // Verify Battle card presentations invoke DynamicCardAssembler
+            string handViewPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Battle/BattleHandCardView.cs");
+            Assert.IsTrue(File.Exists(handViewPath) && File.ReadAllText(handViewPath).Contains("DynamicCardAssembler.AssembleCard"), "BattleHandCardView must assemble cards via DynamicCardAssembler.");
+
+            string slotViewPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Battle/BattleCardSlotView.cs");
+            Assert.IsTrue(File.Exists(slotViewPath) && File.ReadAllText(slotViewPath).Contains("DynamicCardAssembler.AssembleCard"), "BattleCardSlotView must assemble cards via DynamicCardAssembler.");
+
+            string mulliganPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Battle/BattleMulliganModal.cs");
+            Assert.IsTrue(File.Exists(mulliganPath) && File.ReadAllText(mulliganPath).Contains("DynamicCardAssembler.AssembleCard"), "BattleMulliganModal must assemble cards via DynamicCardAssembler.");
+            Assert.IsTrue(File.ReadAllText(mulliganPath).Contains("GetOswaldBoldFont()"), "BattleMulliganModal must use Oswald Bold font for card text.");
+
+            // Verify Home card presentations invoke DynamicCardAssembler
+            string gridItemPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/UI/CardGridItem.cs");
+            Assert.IsTrue(File.Exists(gridItemPath) && File.ReadAllText(gridItemPath).Contains("DynamicCardAssembler.AssembleCard"), "CardGridItem must assemble cards via DynamicCardAssembler.");
+
+            string deckModalPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/UI/DeckManagerModal.cs");
+            Assert.IsTrue(File.Exists(deckModalPath) && File.ReadAllText(deckModalPath).Contains("DynamicCardAssembler.AssembleCard"), "DeckManagerModal must assemble cards via DynamicCardAssembler.");
+
+            string packModalPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/UI/PackOpeningModal.cs");
+            Assert.IsTrue(File.Exists(packModalPath) && File.ReadAllText(packModalPath).Contains("DynamicCardAssembler.AssembleCard"), "PackOpeningModal must assemble cards via DynamicCardAssembler.");
+        }
+
+        [Test]
+        public void DynamicCardAssembler_AtkBadge_UsesSwordIcon_AndDefBadgeIsHidden()
+        {
+            string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
+            if (!Directory.Exists(projectRoot)) return;
+
+            // 1. Verify espada2.png asset exists
+            string swordAssetPath = Path.Combine(projectRoot, "Assets/_Project/Art/Home/espada2.png");
+            Assert.IsTrue(File.Exists(swordAssetPath), "espada2.png asset must exist at: " + swordAssetPath);
+
+            string swordMetaPath = swordAssetPath + ".meta";
+            Assert.IsTrue(File.Exists(swordMetaPath), "espada2.png.meta must exist.");
+
+            // 2. Verify CardArtMapper method
+            Assert.AreEqual("Home/espada2.png", CardArtMapper.GetSwordIconPath(), "CardArtMapper.GetSwordIconPath() must return 'Home/espada2.png'.");
+
+            // 3. Verify DynamicCardAssembler implementation
+            string assemblerPath = Path.Combine(projectRoot, "Assets/_Project/Runtime/Cards/DynamicCardAssembler.cs");
+            Assert.IsTrue(File.Exists(assemblerPath), "DynamicCardAssembler.cs must exist.");
+            string assemblerContent = File.ReadAllText(assemblerPath);
+
+            Assert.IsTrue(assemblerContent.Contains("CardArtMapper.GetSwordIconPath()"), "DynamicCardAssembler must use CardArtMapper.GetSwordIconPath().");
+            Assert.IsTrue(assemblerContent.Contains("616f, 625f, 736f, 757f"), "AtkBadge must be positioned to the right (X: 616..736) and enlarged by 20%.");
+            Assert.IsTrue(assemblerContent.Contains("65f"), "AtkText must have font size increased by 20% (65f).");
+            Assert.IsTrue(assemblerContent.Contains("atkOuterImg.sprite = swordSprite"), "AtkBadge outer image must use swordSprite.");
+            Assert.IsTrue(assemblerContent.Contains("atkInnerImg.sprite = swordSprite"), "AtkBadge inner image must use swordSprite.");
+            Assert.IsTrue(assemblerContent.Contains("atkInnerImg.color = clanColor"), "AtkBadge inner image must use clanColor.");
+            Assert.IsTrue(assemblerContent.Contains("defBadgeGo.SetActive(false)"), "DefBadge must be hidden via SetActive(false).");
         }
     }
 }

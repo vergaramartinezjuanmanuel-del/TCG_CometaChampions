@@ -62,6 +62,8 @@ namespace CometaChampions.Core.Helpers
 
         public static string GetPlecaPath() => "Tarjetas/UI/pleca.png";
 
+        public static string GetSwordIconPath() => "Home/espada2.png";
+
         public static string GetClanBannerPath(ClanType clan)
         {
             return clan switch

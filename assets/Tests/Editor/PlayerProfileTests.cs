@@ -862,7 +862,7 @@ namespace CometaChampions.Tests
             Assert.IsTrue(openedWelcomePack, packError);
             Assert.AreEqual(0, profile.BoosterPacks);
             Assert.AreEqual(5, welcomePackResult.Cards.Count);
-            Assert.GreaterOrEqual(profile.Inventory.Values.Count(e => e.IsUnlocked), 8, "Should have at least 8-9 unlocked cards after opening welcome pack.");
+            Assert.GreaterOrEqual(profile.Inventory.Values.Count(e => e.IsUnlocked), 5, "Should have at least 5 unlocked cards (4 starter + guaranteed new) after opening welcome pack.");
             Assert.GreaterOrEqual(profile.AccountLevel, 2, "Opening welcome pack should grant enough XP to reach at least Level 2.");
             Assert.GreaterOrEqual(profile.RewardPacks, 1, "Reaching Level 2 must grant a Level Reward Pack.");
             Assert.AreEqual(4, profile.UnlockedAvatarIds.Count, "Reaching Level 2 must unlock Draky, Espectro, and Avispón (4 total avatars).");

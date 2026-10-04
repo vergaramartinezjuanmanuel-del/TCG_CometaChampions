@@ -176,7 +176,7 @@ namespace CometaChampions.Runtime.UI
                         iconRect.anchorMax = new Vector2(0.5f, 0.5f);
                         iconRect.pivot = new Vector2(0.5f, 0.5f);
                         iconRect.anchoredPosition = Vector2.zero;
-                        iconRect.sizeDelta = new Vector2(36, 36);
+                        iconRect.sizeDelta = new Vector2(56, 56);
 
                         var lockSprite = Card3D.GetLockIconSprite();
                         if (lockSprite != null)

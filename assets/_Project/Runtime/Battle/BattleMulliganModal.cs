@@ -178,13 +178,16 @@ namespace CometaChampions.Runtime.Battle
                         DynamicCardAssembler.AssembleCard(card, cardArtImages[i].rectTransform);
                     }
 
+                    var oswaldFont = DynamicCardAssembler.GetOswaldBoldFont();
                     if (cardNameTexts != null && i < cardNameTexts.Length && cardNameTexts[i] != null)
                     {
+                        if (oswaldFont != null) cardNameTexts[i].font = oswaldFont;
                         cardNameTexts[i].text = card.Name;
                     }
 
                     if (cardCostTexts != null && i < cardCostTexts.Length && cardCostTexts[i] != null)
                     {
+                        if (oswaldFont != null) cardCostTexts[i].font = oswaldFont;
                         cardCostTexts[i].text = $"<color=#30d158>COST {card.EnergyCost}</color>  |  <color=#ffd60a>ATK {card.BaseAttack}</color>  |  <color=#5ac8fa>HP {card.BaseHealth}</color>";
                     }
 
@@ -350,13 +353,16 @@ namespace CometaChampions.Runtime.Battle
                 DynamicCardAssembler.AssembleCard(newCard, cardArtImages[slotIndex].rectTransform);
             }
 
+            var oswald = DynamicCardAssembler.GetOswaldBoldFont();
             if (cardNameTexts != null && slotIndex < cardNameTexts.Length && cardNameTexts[slotIndex] != null)
             {
+                if (oswald != null) cardNameTexts[slotIndex].font = oswald;
                 cardNameTexts[slotIndex].text = $"• {newCard.Name}";
             }
 
             if (cardCostTexts != null && slotIndex < cardCostTexts.Length && cardCostTexts[slotIndex] != null)
             {
+                if (oswald != null) cardCostTexts[slotIndex].font = oswald;
                 cardCostTexts[slotIndex].text = $"<color=#30d158>COST {newCard.EnergyCost}</color>  |  <color=#ffd60a>ATK {newCard.BaseAttack}</color>  |  <color=#5ac8fa>HP {newCard.BaseHealth}</color>";
             }
 

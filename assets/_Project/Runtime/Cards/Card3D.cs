@@ -246,7 +246,7 @@ namespace CometaChampions.Runtime.Cards
             InitPropertyBlocks();
 
             string flatArtPath = CardArtMapper.GetFlatArtPath(cardData);
-            var frontTex = DynamicCardAssembler.RenderCardToTexture(cardData)
+            var frontTex = DynamicCardAssembler.RenderCardToTexture(cardData, isMain3DCard: true)
                            ?? LoadTextureFromCardsFolder(flatArtPath)
                            ?? LoadTextureFromCardsFolder(cardData.Image);
 
@@ -326,7 +326,8 @@ namespace CometaChampions.Runtime.Cards
                     clanData,
                     frontCanvasRect,
                     DynamicCardAssembler.ReferenceWidth,
-                    DynamicCardAssembler.ReferenceHeight
+                    DynamicCardAssembler.ReferenceHeight,
+                    isMain3DCard: true
                 );
             }
         }

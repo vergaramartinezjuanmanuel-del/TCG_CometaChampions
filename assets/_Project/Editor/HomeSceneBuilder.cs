@@ -433,11 +433,12 @@ namespace CometaChampions.Editor
             scrollRect.content = contentRect;
 
             var gridLayout = contentObj.AddComponent<GridLayoutGroup>();
-            gridLayout.cellSize = new Vector2(92, 129);
-            gridLayout.spacing = new Vector2(8, 10);
-            gridLayout.padding = new RectOffset(10, 10, 10, 10);
+            gridLayout.cellSize = new Vector2(236, 330);
+            gridLayout.spacing = new Vector2(16, 16);
+            gridLayout.padding = new RectOffset(16, 16, 16, 16);
+            gridLayout.childAlignment = TextAnchor.UpperCenter;
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gridLayout.constraintCount = 5;
+            gridLayout.constraintCount = 2;
 
             var contentFitter = contentObj.AddComponent<ContentSizeFitter>();
             contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -727,7 +728,7 @@ namespace CometaChampions.Editor
 
             var itemObj = new GameObject("CardGridItem", typeof(RectTransform));
             var itemRect = itemObj.GetComponent<RectTransform>();
-            itemRect.sizeDelta = new Vector2(92, 129);
+            itemRect.sizeDelta = new Vector2(236, 330);
 
             var bgImg = itemObj.AddComponent<Image>();
             bgImg.color = new Color(0.12f, 0.13f, 0.18f);
@@ -775,7 +776,7 @@ namespace CometaChampions.Editor
             lockIconRect.anchorMax = new Vector2(0.5f, 0.5f);
             lockIconRect.pivot = new Vector2(0.5f, 0.5f);
             lockIconRect.anchoredPosition = Vector2.zero;
-            lockIconRect.sizeDelta = new Vector2(36, 36);
+            lockIconRect.sizeDelta = new Vector2(56, 56);
             var lockIconImg = lockIconObj.AddComponent<Image>();
             lockIconImg.sprite = Card3D.GetLockIconSprite();
             lockIconImg.color = new Color(1f, 0.85f, 0.25f, 1f); // Vibrant gold

@@ -138,6 +138,37 @@ namespace CometaChampions.Runtime.Cards
             return TMP_Settings.defaultFontAsset;
         }
 
+        private const string OswaldFontAssetPath = "Assets/TextMesh Pro/Examples & Extras/Resources/Fonts & Materials/Oswald Bold SDF.asset";
+        private static TMP_FontAsset cachedOswaldFont;
+
+        /// <summary>
+        /// Loads or dynamically references the TMP_FontAsset for "Oswald Bold SDF".
+        /// </summary>
+        public static TMP_FontAsset GetOswaldBoldFont()
+        {
+            if (cachedOswaldFont != null) return cachedOswaldFont;
+
+#if UNITY_EDITOR
+            cachedOswaldFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(OswaldFontAssetPath);
+            if (cachedOswaldFont != null) return cachedOswaldFont;
+#endif
+
+            cachedOswaldFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF")
+                               ?? Resources.Load<TMP_FontAsset>("Oswald Bold SDF");
+            if (cachedOswaldFont != null) return cachedOswaldFont;
+
+            return GetCardFont();
+        }
+
+        /// <summary>
+        /// Modular body font selector: returns Oswald Bold SDF for cards across Home and Battle.
+        /// </summary>
+        public static TMP_FontAsset GetBodyFont(bool isMain3DCard = true)
+        {
+            return GetOswaldBoldFont();
+        }
+
+
         /// <summary>
         /// Converts a CardDefinition into ShowcaseCardData (preserving live runtime stats if needed).
         /// </summary>
@@ -204,12 +235,13 @@ namespace CometaChampions.Runtime.Cards
             CardDefinition definition,
             RectTransform parent,
             float cardWidth = 0f,
-            float cardHeight = 0f)
+            float cardHeight = 0f,
+            bool isMain3DCard = true)
         {
             if (definition == null || parent == null) return null;
             var cardData = ResolveShowcaseCardData(definition);
             var clanData = CardShowcaseCatalog.GetClanById(cardData.Clan);
-            return AssembleCard(cardData, clanData, parent, cardWidth, cardHeight);
+            return AssembleCard(cardData, clanData, parent, cardWidth, cardHeight, isMain3DCard);
         }
 
         /// <summary>
@@ -220,7 +252,8 @@ namespace CometaChampions.Runtime.Cards
             ShowcaseClanData clanData,
             RectTransform parent,
             float cardWidth = 0f,
-            float cardHeight = 0f)
+            float cardHeight = 0f,
+            bool isMain3DCard = true)
         {
             if (cardData == null || parent == null) return null;
 
@@ -240,6 +273,7 @@ namespace CometaChampions.Runtime.Cards
             ClanType clanType = CardArtMapper.ParseClanType(cardData.Clan);
             Color clanColor = GetClanColor(clanType);
             TMP_FontAsset cardFont = GetCardFont();
+            TMP_FontAsset bodyFont = GetBodyFont(isMain3DCard);
 
             // Root container stretches to fill parent
             var rootGo = new GameObject("DynamicCard", typeof(RectTransform));
@@ -323,10 +357,10 @@ namespace CometaChampions.Runtime.Cards
             nameBarImg.preserveAspect = false;
             nameBarImg.raycastTarget = false;
 
-            // Card Name on Left of Clan Band (X: 33..505, Y_top: 650..734)
+            // Card Name on Left of Clan Band (X: 33..608, Y_top: 650..734)
             string displayName = CardArtMapper.GetCardDisplayName(cardData.Name);
             var nameText = CreateCardTMP("NameText", nameBarGo.transform, displayName, cardFont, 68f, Color.white, TextAlignmentOptions.MidlineLeft);
-            SetRectFromTopLeft(nameText.rectTransform, 33f, 650f, 505f, 734f);
+            SetRectFromTopLeft(nameText.rectTransform, 33f, 650f, 608f, 734f);
             nameText.enableAutoSizing = true;
             nameText.fontSizeMin = 32f;
             nameText.fontSizeMax = 68f;
@@ -341,25 +375,31 @@ namespace CometaChampions.Runtime.Cards
 
             if (showStats)
             {
-                // Attack Badge (Left stat badge: X: 528..630, Y_top: 638..740)
+                var swordSprite = Card3D.LoadSpriteFromCardsFolder(CardArtMapper.GetSwordIconPath())
+                                  ?? Card3D.LoadSpriteFromCardsFolder("Home/espada2.png")
+                                  ?? GetCircleSprite();
+
+                // Attack Badge (Right stat badge with espada2.png icon: X: 616..736, Y_top: 625..757, enlarged +20%)
                 var atkBadgeGo = CreateChild("AtkBadge", nameBarGo.transform);
-                SetRectFromTopLeft(atkBadgeGo.GetComponent<RectTransform>(), 528f, 638f, 630f, 740f);
+                SetRectFromTopLeft(atkBadgeGo.GetComponent<RectTransform>(), 616f, 625f, 736f, 757f);
                 var atkOuterImg = atkBadgeGo.AddComponent<Image>();
-                atkOuterImg.sprite = GetCircleSprite();
+                atkOuterImg.sprite = swordSprite;
                 atkOuterImg.color = Color.white;
+                atkOuterImg.preserveAspect = true;
                 atkOuterImg.raycastTarget = false;
 
                 var atkInnerGo = CreateChild("AtkInner", atkBadgeGo.transform);
-                SetStretch(atkInnerGo.GetComponent<RectTransform>(), 8f);
+                SetStretch(atkInnerGo.GetComponent<RectTransform>(), 4f);
                 var atkInnerImg = atkInnerGo.AddComponent<Image>();
-                atkInnerImg.sprite = GetCircleSprite();
+                atkInnerImg.sprite = swordSprite;
                 atkInnerImg.color = clanColor;
+                atkInnerImg.preserveAspect = true;
                 atkInnerImg.raycastTarget = false;
 
-                var atkText = CreateCardTMP("AtkText", atkBadgeGo.transform, cardData.Attack.ToString(), cardFont, 56f, new Color(0.05f, 0.05f, 0.05f, 1f), TextAlignmentOptions.Center);
-                SetStretch(atkText.rectTransform, 4f);
+                var atkText = CreateCardTMP("AtkText", atkBadgeGo.transform, cardData.Attack.ToString(), cardFont, 65f, Color.white, TextAlignmentOptions.Center);
+                SetStretch(atkText.rectTransform, 2f);
 
-                // Defense Badge (Right stat badge: X: 638..730, Y_top: 654..746)
+                // Defense Badge (Right stat badge - hidden per user instruction, preserving structure)
                 var defBadgeGo = CreateChild("DefBadge", nameBarGo.transform);
                 SetRectFromTopLeft(defBadgeGo.GetComponent<RectTransform>(), 638f, 654f, 730f, 746f);
                 var defOuterImg = defBadgeGo.AddComponent<Image>();
@@ -376,23 +416,24 @@ namespace CometaChampions.Runtime.Cards
 
                 var defText = CreateCardTMP("DefText", defBadgeGo.transform, cardData.Defense.ToString(), cardFont, 50f, Color.white, TextAlignmentOptions.Center);
                 SetStretch(defText.rectTransform, 4f);
+                defBadgeGo.SetActive(false);
             }
 
             // 5. Category Label Centered in Dark Strip (X: 50..700, Y_top: 750..792)
             string categoryDisplay = CardArtMapper.GetCategoryDisplayName(cardData.Category);
-            var categoryText = CreateCardTMP("CategoryText", refRt, categoryDisplay, cardFont, 30f, Color.white, TextAlignmentOptions.Center);
+            float catFontSize = 32f;
+            FontStyles catFontStyle = FontStyles.Bold;
+            var categoryText = CreateCardTMP("CategoryText", refRt, categoryDisplay, bodyFont, catFontSize, Color.white, TextAlignmentOptions.Center, catFontStyle);
             SetRectFromTopLeft(categoryText.rectTransform, 50f, 750f, 700f, 792f);
 
-            // 6. Description Row (Y_top: 822..884)
+            // 6. Description Row
             var descRowGo = CreateChild("DescriptionRow", refRt);
-            SetRectFromTopLeft(descRowGo.GetComponent<RectTransform>(), 0f, 822f, ReferenceWidth, 884f);
+            SetRectFromTopLeft(descRowGo.GetComponent<RectTransform>(), 0f, 804f, ReferenceWidth, 886f);
 
             var descPlecaGo = CreateChild("Pleca", descRowGo.transform);
-            SetRectFromTopLeft(descPlecaGo.transform.parent == refRt ? descPlecaGo.GetComponent<RectTransform>() : descPlecaGo.GetComponent<RectTransform>(), 0f, 829f, 193f, 877f);
-            // Adjust relative to DescriptionRow
             var descPlecaRt = descPlecaGo.GetComponent<RectTransform>();
-            descPlecaRt.anchorMin = new Vector2(0f, 0.11f);
-            descPlecaRt.anchorMax = new Vector2(193f / ReferenceWidth, 0.89f);
+            descPlecaRt.anchorMin = new Vector2(14f / ReferenceWidth, 0.22f);
+            descPlecaRt.anchorMax = new Vector2(196f / ReferenceWidth, 0.78f);
             descPlecaRt.offsetMin = Vector2.zero;
             descPlecaRt.offsetMax = Vector2.zero;
 
@@ -402,30 +443,34 @@ namespace CometaChampions.Runtime.Cards
             descPlecaImg.color = Color.white;
             descPlecaImg.raycastTarget = false;
 
-            var descLabel = CreateCardTMP("DescLabel", descPlecaGo.transform, "DESCRIPCIÓN", cardFont, 28f, Color.white, TextAlignmentOptions.Center);
+            float descLabelSize = 25f;
+            var descLabel = CreateCardTMP("DescLabel", descPlecaGo.transform, "DESCRIPCIÓN", bodyFont, descLabelSize, Color.white, TextAlignmentOptions.Center, FontStyles.Bold | FontStyles.Italic);
             SetStretch(descLabel.rectTransform, 4f);
 
             string descriptionContent = GetDescriptionText(cardData);
-            var descText = CreateCardTMP("DescText", descRowGo.transform, descriptionContent, cardFont, 28f, new Color(0.06f, 0.06f, 0.06f, 1f), TextAlignmentOptions.MidlineLeft);
+            Color descTextColor = new Color(0.07f, 0.07f, 0.09f, 1f);
+            FontStyles descFontStyle = FontStyles.Bold;
+            var descText = CreateCardTMP("DescText", descRowGo.transform, descriptionContent, bodyFont, 28f, descTextColor, TextAlignmentOptions.MidlineLeft, descFontStyle);
             var descTextRt = descText.rectTransform;
-            descTextRt.anchorMin = new Vector2(212f / ReferenceWidth, 0f);
-            descTextRt.anchorMax = new Vector2(732f / ReferenceWidth, 1f);
+            descTextRt.anchorMin = new Vector2(208f / ReferenceWidth, 0f);
+            descTextRt.anchorMax = new Vector2(736f / ReferenceWidth, 1f);
+            descText.lineSpacing = 4f;
+            descText.fontSizeMin = 18f;
             descTextRt.offsetMin = Vector2.zero;
             descTextRt.offsetMax = Vector2.zero;
             descText.enableAutoSizing = true;
-            descText.fontSizeMin = 15f;
             descText.fontSizeMax = 28f;
             descText.textWrappingMode = TextWrappingModes.Normal;
             descText.overflowMode = TextOverflowModes.Ellipsis;
 
-            // 7. Quote Row (Y_top: 895..957)
+            // 7. Quote Row
             var quoteRowGo = CreateChild("QuoteRow", refRt);
-            SetRectFromTopLeft(quoteRowGo.GetComponent<RectTransform>(), 0f, 895f, ReferenceWidth, 957f);
+            SetRectFromTopLeft(quoteRowGo.GetComponent<RectTransform>(), 0f, 892f, ReferenceWidth, 974f);
 
             var quotePlecaGo = CreateChild("Pleca", quoteRowGo.transform);
             var quotePlecaRt = quotePlecaGo.GetComponent<RectTransform>();
-            quotePlecaRt.anchorMin = new Vector2(0f, 0.11f);
-            quotePlecaRt.anchorMax = new Vector2(193f / ReferenceWidth, 0.89f);
+            quotePlecaRt.anchorMin = new Vector2(14f / ReferenceWidth, 0.22f);
+            quotePlecaRt.anchorMax = new Vector2(196f / ReferenceWidth, 0.78f);
             quotePlecaRt.offsetMin = Vector2.zero;
             quotePlecaRt.offsetMax = Vector2.zero;
 
@@ -434,25 +479,31 @@ namespace CometaChampions.Runtime.Cards
             quotePlecaImg.color = Color.white;
             quotePlecaImg.raycastTarget = false;
 
-            var quoteLabel = CreateCardTMP("QuoteLabel", quotePlecaGo.transform, "FRASE ICÓNICA", cardFont, 28f, Color.white, TextAlignmentOptions.Center);
+            float quoteLabelSize = 23f;
+            var quoteLabel = CreateCardTMP("QuoteLabel", quotePlecaGo.transform, "FRASE ICÓNICA", bodyFont, quoteLabelSize, Color.white, TextAlignmentOptions.Center, FontStyles.Bold | FontStyles.Italic);
             SetStretch(quoteLabel.rectTransform, 4f);
 
             string quoteContent = GetQuoteText(cardData);
-            var quoteText = CreateCardTMP("QuoteText", quoteRowGo.transform, quoteContent, cardFont, 28f, new Color(0.14f, 0.14f, 0.14f, 1f), TextAlignmentOptions.MidlineLeft);
+            Color quoteTextColor = new Color(0.10f, 0.10f, 0.13f, 1f);
+            var quoteText = CreateCardTMP("QuoteText", quoteRowGo.transform, quoteContent, bodyFont, 28f, quoteTextColor, TextAlignmentOptions.MidlineLeft, FontStyles.Bold | FontStyles.Italic);
             var quoteTextRt = quoteText.rectTransform;
-            quoteTextRt.anchorMin = new Vector2(212f / ReferenceWidth, 0f);
-            quoteTextRt.anchorMax = new Vector2(732f / ReferenceWidth, 1f);
+            quoteTextRt.anchorMin = new Vector2(208f / ReferenceWidth, 0f);
+            quoteTextRt.anchorMax = new Vector2(736f / ReferenceWidth, 1f);
+            quoteText.lineSpacing = 4f;
+            quoteText.fontSizeMin = 18f;
             quoteTextRt.offsetMin = Vector2.zero;
             quoteTextRt.offsetMax = Vector2.zero;
             quoteText.enableAutoSizing = true;
-            quoteText.fontSizeMin = 15f;
             quoteText.fontSizeMax = 28f;
             quoteText.textWrappingMode = TextWrappingModes.Normal;
             quoteText.overflowMode = TextOverflowModes.Ellipsis;
 
-            // 8. Bottom-Right Copyright (X: 380..718, Y_top: 992..1034)
-            var copyrightText = CreateCardTMP("CopyrightText", refRt, "© TROMPOS COMETA", cardFont, 27f, Color.white, TextAlignmentOptions.MidlineRight);
-            SetRectFromTopLeft(copyrightText.rectTransform, 380f, 992f, 718f, 1034f);
+            // 8. Bottom-Right Copyright
+            float copyFontSize = 24f;
+            FontStyles copyFontStyle = FontStyles.Bold;
+            Color copyColor = new Color(0.90f, 0.90f, 0.92f, 1f);
+            var copyrightText = CreateCardTMP("CopyrightText", refRt, "© TROMPOS COMETA", bodyFont, copyFontSize, copyColor, TextAlignmentOptions.MidlineRight, copyFontStyle);
+            SetRectFromTopLeft(copyrightText.rectTransform, 350f, 994f, 725f, 1036f);
 
             return rootGo;
         }
@@ -460,11 +511,11 @@ namespace CometaChampions.Runtime.Cards
         /// <summary>
         /// Renders the dynamically assembled card into a cached 750x1050 Texture2D for 3D FrontFace rendering.
         /// </summary>
-        public static Texture2D RenderCardToTexture(ShowcaseCardData cardData)
+        public static Texture2D RenderCardToTexture(ShowcaseCardData cardData, bool isMain3DCard = true)
         {
             if (cardData == null) return null;
 
-            string cacheKey = $"{cardData.Id}_{cardData.Cost}_{cardData.Attack}_{cardData.Defense}";
+            string cacheKey = $"{cardData.Id}_{cardData.Cost}_{cardData.Attack}_{cardData.Defense}_{(isMain3DCard ? "Main" : "Norm")}";
             if (RenderedCardTextures.TryGetValue(cacheKey, out var cachedTex) && cachedTex != null)
             {
                 return cachedTex;
@@ -507,7 +558,7 @@ namespace CometaChampions.Runtime.Cards
             canvasRt.sizeDelta = new Vector2(width, height);
 
             var clanData = CardShowcaseCatalog.GetClanById(cardData.Clan);
-            var assembled = AssembleCard(cardData, clanData, canvasRt, width, height);
+            var assembled = AssembleCard(cardData, clanData, canvasRt, width, height, isMain3DCard);
 
             // Ensure all TMP and Image meshes are updated before rendering
             Canvas.ForceUpdateCanvases();
@@ -556,17 +607,17 @@ namespace CometaChampions.Runtime.Cards
         /// <summary>
         /// Renders the dynamically assembled card into a cached 750x1050 Sprite.
         /// </summary>
-        public static Sprite RenderCardToSprite(ShowcaseCardData cardData)
+        public static Sprite RenderCardToSprite(ShowcaseCardData cardData, bool isMain3DCard = true)
         {
             if (cardData == null) return null;
 
-            string cacheKey = $"{cardData.Id}_{cardData.Cost}_{cardData.Attack}_{cardData.Defense}";
+            string cacheKey = $"{cardData.Id}_{cardData.Cost}_{cardData.Attack}_{cardData.Defense}_{(isMain3DCard ? "Main" : "Norm")}";
             if (RenderedCardSprites.TryGetValue(cacheKey, out var cachedSprite) && cachedSprite != null)
             {
                 return cachedSprite;
             }
 
-            var tex = RenderCardToTexture(cardData);
+            var tex = RenderCardToTexture(cardData, isMain3DCard);
             if (tex == null) return null;
 
             var sprite = Sprite.Create(
@@ -638,7 +689,8 @@ namespace CometaChampions.Runtime.Cards
             TMP_FontAsset font,
             float fontSize,
             Color color,
-            TextAlignmentOptions alignment)
+            TextAlignmentOptions alignment,
+            FontStyles fontStyle = FontStyles.Italic | FontStyles.Bold)
         {
             var go = CreateChild(name, parent);
             var tmp = go.AddComponent<TextMeshProUGUI>();
@@ -650,7 +702,7 @@ namespace CometaChampions.Runtime.Cards
             tmp.fontSize = fontSize;
             tmp.color = color;
             tmp.alignment = alignment;
-            tmp.fontStyle = FontStyles.Italic | FontStyles.Bold;
+            tmp.fontStyle = fontStyle;
             tmp.raycastTarget = false;
             return tmp;
         }

@@ -163,6 +163,7 @@ namespace CometaChampions.Runtime.UI
         {
             EnsureClear3DViewport();
             EnsureStudioLighting();
+            EnsureCardGridLayout();
         }
 
         private void Update()
@@ -968,8 +969,28 @@ namespace CometaChampions.Runtime.UI
             RefreshGrid();
         }
 
+        /// <summary>
+        /// Ensures the "MIS CARTAS" grid displays cards 2 per row (2 columns) with enlarged size (236x330).
+        /// </summary>
+        private void EnsureCardGridLayout()
+        {
+            if (gridContentParent == null) return;
+            var gridLayout = gridContentParent.GetComponent<GridLayoutGroup>();
+            if (gridLayout != null)
+            {
+                gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                gridLayout.constraintCount = 2;
+                gridLayout.cellSize = new Vector2(236, 330);
+                gridLayout.spacing = new Vector2(16, 16);
+                gridLayout.padding = new RectOffset(16, 16, 16, 16);
+                gridLayout.childAlignment = TextAnchor.UpperCenter;
+            }
+        }
+
         public void RefreshGrid()
         {
+            EnsureCardGridLayout();
+
             // Clear existing spawned items
             foreach (var item in spawnedGridItems)
             {
