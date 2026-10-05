@@ -32,7 +32,10 @@ namespace CometaChampions.Runtime.Services
                     {
                         var go = new GameObject("AudioManager");
                         instance = go.AddComponent<AudioManager>();
-                        DontDestroyOnLoad(go);
+                        if (Application.isPlaying)
+                        {
+                            DontDestroyOnLoad(go);
+                        }
                     }
                 }
                 return instance;

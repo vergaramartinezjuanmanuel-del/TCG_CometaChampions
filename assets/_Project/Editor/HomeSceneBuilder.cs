@@ -22,6 +22,77 @@ namespace CometaChampions.Editor
         private const string PrefabDir = "Assets/_Project/Prefabs";
         private const string GridItemPrefabPath = "Assets/_Project/Prefabs/CardGridItem.prefab";
 
+        [MenuItem("Cometa Champions/Build Settings Modal In Current Scene")]
+        public static void BuildSettingsModalInCurrentScene()
+        {
+            var home = Object.FindAnyObjectByType<Home>();
+            if (home == null)
+            {
+                Debug.LogError("[HomeSceneBuilder] No Home component found in current scene!");
+                return;
+            }
+
+            var canvas = home.GetComponent<Canvas>() ?? home.GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                Debug.LogError("[HomeSceneBuilder] No Canvas found for Home component!");
+                return;
+            }
+
+            var so = new SerializedObject(home);
+
+            // 1. SettingsGearButton in HeaderBar
+            var headerBar = canvas.transform.Find("HeaderBar");
+            if (headerBar != null)
+            {
+                var existingGear = headerBar.Find("SettingsGearButton");
+                if (existingGear == null)
+                {
+                    var settingsBtn = CreateButton("SettingsGearButton", headerBar, "⚙", new Vector2(-8, -45), new Vector2(46, 46));
+                    var setRt = settingsBtn.GetComponent<RectTransform>();
+                    setRt.anchorMin = new Vector2(1, 1);
+                    setRt.anchorMax = new Vector2(1, 1);
+                    setRt.pivot = new Vector2(1, 0.5f);
+                    var setImg = settingsBtn.GetComponent<Image>();
+                    setImg.color = new Color(0.18f, 0.20f, 0.28f, 0.95f);
+                    var gearSprite = Resources.Load<Sprite>("UI/SettingsGearIcon");
+                    if (gearSprite != null)
+                    {
+                        setImg.sprite = gearSprite;
+                        var childTMP = settingsBtn.GetComponentInChildren<TextMeshProUGUI>();
+                        if (childTMP != null) childTMP.text = "";
+                    }
+                    else
+                    {
+                        var setTMP = settingsBtn.GetComponentInChildren<TextMeshProUGUI>();
+                        if (setTMP != null)
+                        {
+                            setTMP.text = "⚙";
+                            setTMP.fontSize = 24f;
+                            setTMP.color = new Color(1f, 0.85f, 0.3f);
+                        }
+                    }
+                    so.FindProperty("settingsButton").objectReferenceValue = settingsBtn;
+                }
+                else
+                {
+                    so.FindProperty("settingsButton").objectReferenceValue = existingGear.GetComponent<Button>();
+                }
+            }
+
+            // 2. SettingsModalRoot under Canvas
+            var existingModal = canvas.transform.Find("SettingsModalRoot");
+            if (existingModal != null)
+            {
+                Undo.DestroyObjectImmediate(existingModal.gameObject);
+            }
+
+            BuildSettingsModal(canvas.transform, so);
+            so.ApplyModifiedProperties();
+            EditorSceneManager.MarkSceneDirty(home.gameObject.scene);
+            Debug.Log("[HomeSceneBuilder] SettingsModalRoot built successfully in current scene!");
+        }
+
         [MenuItem("Cometa Champions/Build Home Scene")]
         public static void BuildHomeScene()
         {
@@ -247,6 +318,32 @@ namespace CometaChampions.Editor
                 osTMP.fontStyle = FontStyles.Bold;
             }
             so.FindProperty("openShopButton").objectReferenceValue = openShopBtn;
+
+            // Settings Gear Button
+            var settingsBtn = CreateButton("SettingsGearButton", headerObj.transform, "⚙", new Vector2(-8, -45), new Vector2(46, 46));
+            var setRt = settingsBtn.GetComponent<RectTransform>();
+            setRt.anchorMin = new Vector2(1, 1);
+            setRt.anchorMax = new Vector2(1, 1);
+            setRt.pivot = new Vector2(1, 0.5f);
+            var setImg = settingsBtn.GetComponent<Image>();
+            setImg.color = new Color(0.18f, 0.20f, 0.28f, 0.95f);
+            var gearSprite = Resources.Load<Sprite>("UI/SettingsGearIcon");
+            if (gearSprite != null)
+            {
+                setImg.sprite = gearSprite;
+                var childTMP = settingsBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (childTMP != null) childTMP.text = "";
+            }
+            else
+            {
+                var setTMP = settingsBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (setTMP != null)
+                {
+                    setTMP.fontSize = 24;
+                    setTMP.color = new Color(1f, 0.85f, 0.3f);
+                }
+            }
+            so.FindProperty("settingsButton").objectReferenceValue = settingsBtn;
 
             // Player Nickname InputField (Editable)
             var nameInput = CreateTMPInputField("PlayerNameInputField", headerObj.transform, new Vector2(-340, -45), new Vector2(230, 48), "Tu apodo...");
@@ -699,6 +796,9 @@ namespace CometaChampions.Editor
             // 8. Card Pack Opening Modal (Rule 11) & Pack Shop Modal (Rule 1)
             var openingModal = BuildPackOpeningModal(canvasObj.transform, so);
             BuildPackShopModal(canvasObj.transform, so, openingModal);
+
+            // 9. Settings Modal (Audio Controls: SFX & Music ON/OFF Buttons)
+            BuildSettingsModal(canvasObj.transform, so);
 
             so.ApplyModifiedProperties();
 
@@ -1937,6 +2037,178 @@ namespace CometaChampions.Editor
 
             modalSo.ApplyModifiedProperties();
             homeSo.FindProperty("packShopModal").objectReferenceValue = modalComp;
+            modalRoot.SetActive(false);
+        }
+
+        private static void BuildSettingsModal(Transform canvasTransform, SerializedObject so)
+        {
+            // 1. Root Overlay (dimmed backdrop)
+            var modalRoot = CreateUIElement("SettingsModalRoot", canvasTransform);
+            SetStretch(modalRoot.GetComponent<RectTransform>());
+            var overlayImg = modalRoot.AddComponent<Image>();
+            overlayImg.color = new Color(0.02f, 0.03f, 0.06f, 0.82f);
+            so.FindProperty("settingsPanelRoot").objectReferenceValue = modalRoot;
+
+            // 2. Modal Dialog Window
+            var dialogObj = CreateUIElement("SettingsDialogWindow", modalRoot.transform);
+            var dialogRect = dialogObj.GetComponent<RectTransform>();
+            dialogRect.anchorMin = new Vector2(0.5f, 0.5f);
+            dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
+            dialogRect.pivot = new Vector2(0.5f, 0.5f);
+            dialogRect.anchoredPosition = Vector2.zero;
+            dialogRect.sizeDelta = new Vector2(480, 360);
+
+            var dialogImg = dialogObj.AddComponent<Image>();
+            dialogImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
+
+            // 3. Dialog Header Bar
+            var headerObj = CreateUIElement("DialogHeader", dialogObj.transform);
+            var headerRect = headerObj.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0, 1);
+            headerRect.anchorMax = new Vector2(1, 1);
+            headerRect.pivot = new Vector2(0.5f, 1);
+            headerRect.anchoredPosition = Vector2.zero;
+            headerRect.sizeDelta = new Vector2(0, 60);
+
+            var titleTMP = CreateTMPText("TitleText", headerObj.transform, "CONFIGURACIÓN DE AUDIO", Vector2.zero, new Vector2(440, 50), 22, TextAlignmentOptions.Center);
+            titleTMP.fontStyle = FontStyles.Bold;
+            titleTMP.color = new Color(1f, 0.84f, 0.25f);
+
+            // 4. SFX Section Row
+            var sfxRowObj = CreateUIElement("SfxRow", dialogObj.transform);
+            var sfxRowRect = sfxRowObj.GetComponent<RectTransform>();
+            sfxRowRect.anchorMin = new Vector2(0.5f, 0.5f);
+            sfxRowRect.anchorMax = new Vector2(0.5f, 0.5f);
+            sfxRowRect.pivot = new Vector2(0.5f, 0.5f);
+            sfxRowRect.anchoredPosition = new Vector2(0, 45);
+            sfxRowRect.sizeDelta = new Vector2(400, 54);
+
+            var sfxRowBg = sfxRowObj.AddComponent<Image>();
+            sfxRowBg.color = new Color(0.14f, 0.16f, 0.24f, 0.60f);
+
+            var sfxLabel = CreateTMPText("SfxLabel", sfxRowObj.transform, "EFECTOS (SFX)", new Vector2(15, 0), new Vector2(180, 40), 17, TextAlignmentOptions.MidlineLeft);
+            var sfxLabelRt = sfxLabel.GetComponent<RectTransform>();
+            sfxLabelRt.anchorMin = new Vector2(0, 0.5f);
+            sfxLabelRt.anchorMax = new Vector2(0, 0.5f);
+            sfxLabelRt.pivot = new Vector2(0, 0.5f);
+            sfxLabel.fontStyle = FontStyles.Bold;
+            sfxLabel.color = Color.white;
+
+            // Sfx ON Button
+            var sfxOnBtn = CreateButton("SfxOnButton", sfxRowObj.transform, "ON", new Vector2(-105, 0), new Vector2(80, 40));
+            var sfxOnRt = sfxOnBtn.GetComponent<RectTransform>();
+            sfxOnRt.anchorMin = new Vector2(1, 0.5f);
+            sfxOnRt.anchorMax = new Vector2(1, 0.5f);
+            sfxOnRt.pivot = new Vector2(1, 0.5f);
+            var sfxOnImg = sfxOnBtn.GetComponent<Image>();
+            sfxOnImg.color = new Color(0.18f, 0.62f, 0.31f);
+            var sfxOnTMP = sfxOnBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (sfxOnTMP != null)
+            {
+                sfxOnTMP.fontSize = 16;
+                sfxOnTMP.fontStyle = FontStyles.Bold;
+                sfxOnTMP.color = Color.white;
+            }
+
+            // Sfx OFF Button
+            var sfxOffBtn = CreateButton("SfxOffButton", sfxRowObj.transform, "OFF", new Vector2(-15, 0), new Vector2(80, 40));
+            var sfxOffRt = sfxOffBtn.GetComponent<RectTransform>();
+            sfxOffRt.anchorMin = new Vector2(1, 0.5f);
+            sfxOffRt.anchorMax = new Vector2(1, 0.5f);
+            sfxOffRt.pivot = new Vector2(1, 0.5f);
+            var sfxOffImg = sfxOffBtn.GetComponent<Image>();
+            sfxOffImg.color = new Color(0.14f, 0.16f, 0.22f);
+            var sfxOffTMP = sfxOffBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (sfxOffTMP != null)
+            {
+                sfxOffTMP.fontSize = 16;
+                sfxOffTMP.fontStyle = FontStyles.Bold;
+                sfxOffTMP.color = new Color(0.60f, 0.64f, 0.74f);
+            }
+
+            so.FindProperty("sfxOnButton").objectReferenceValue = sfxOnBtn;
+            so.FindProperty("sfxOffButton").objectReferenceValue = sfxOffBtn;
+            so.FindProperty("sfxOnButtonImage").objectReferenceValue = sfxOnImg;
+            so.FindProperty("sfxOffButtonImage").objectReferenceValue = sfxOffImg;
+            so.FindProperty("sfxOnButtonText").objectReferenceValue = sfxOnTMP;
+            so.FindProperty("sfxOffButtonText").objectReferenceValue = sfxOffTMP;
+
+            // 5. Music Section Row
+            var musRowObj = CreateUIElement("MusicRow", dialogObj.transform);
+            var musRowRect = musRowObj.GetComponent<RectTransform>();
+            musRowRect.anchorMin = new Vector2(0.5f, 0.5f);
+            musRowRect.anchorMax = new Vector2(0.5f, 0.5f);
+            musRowRect.pivot = new Vector2(0.5f, 0.5f);
+            musRowRect.anchoredPosition = new Vector2(0, -25);
+            musRowRect.sizeDelta = new Vector2(400, 54);
+
+            var musRowBg = musRowObj.AddComponent<Image>();
+            musRowBg.color = new Color(0.14f, 0.16f, 0.24f, 0.60f);
+
+            var musLabel = CreateTMPText("MusicLabel", musRowObj.transform, "MÚSICA (BGM)", new Vector2(15, 0), new Vector2(180, 40), 17, TextAlignmentOptions.MidlineLeft);
+            var musLabelRt = musLabel.GetComponent<RectTransform>();
+            musLabelRt.anchorMin = new Vector2(0, 0.5f);
+            musLabelRt.anchorMax = new Vector2(0, 0.5f);
+            musLabelRt.pivot = new Vector2(0, 0.5f);
+            musLabel.fontStyle = FontStyles.Bold;
+            musLabel.color = Color.white;
+
+            // Music ON Button
+            var musOnBtn = CreateButton("MusicOnButton", musRowObj.transform, "ON", new Vector2(-105, 0), new Vector2(80, 40));
+            var musOnRt = musOnBtn.GetComponent<RectTransform>();
+            musOnRt.anchorMin = new Vector2(1, 0.5f);
+            musOnRt.anchorMax = new Vector2(1, 0.5f);
+            musOnRt.pivot = new Vector2(1, 0.5f);
+            var musOnImg = musOnBtn.GetComponent<Image>();
+            musOnImg.color = new Color(0.18f, 0.62f, 0.31f);
+            var musOnTMP = musOnBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (musOnTMP != null)
+            {
+                musOnTMP.fontSize = 16;
+                musOnTMP.fontStyle = FontStyles.Bold;
+                musOnTMP.color = Color.white;
+            }
+
+            // Music OFF Button
+            var musOffBtn = CreateButton("MusicOffButton", musRowObj.transform, "OFF", new Vector2(-15, 0), new Vector2(80, 40));
+            var musOffRt = musOffBtn.GetComponent<RectTransform>();
+            musOffRt.anchorMin = new Vector2(1, 0.5f);
+            musOffRt.anchorMax = new Vector2(1, 0.5f);
+            musOffRt.pivot = new Vector2(1, 0.5f);
+            var musOffImg = musOffBtn.GetComponent<Image>();
+            musOffImg.color = new Color(0.14f, 0.16f, 0.22f);
+            var musOffTMP = musOffBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (musOffTMP != null)
+            {
+                musOffTMP.fontSize = 16;
+                musOffTMP.fontStyle = FontStyles.Bold;
+                musOffTMP.color = new Color(0.60f, 0.64f, 0.74f);
+            }
+
+            so.FindProperty("musicOnButton").objectReferenceValue = musOnBtn;
+            so.FindProperty("musicOffButton").objectReferenceValue = musOffBtn;
+            so.FindProperty("musicOnButtonImage").objectReferenceValue = musOnImg;
+            so.FindProperty("musicOffButtonImage").objectReferenceValue = musOffImg;
+            so.FindProperty("musicOnButtonText").objectReferenceValue = musOnTMP;
+            so.FindProperty("musicOffButtonText").objectReferenceValue = musOffTMP;
+
+            // 6. Close Button
+            var closeBtn = CreateButton("CloseSettingsButton", dialogObj.transform, "CERRAR", new Vector2(0, 22), new Vector2(180, 42));
+            var closeRt = closeBtn.GetComponent<RectTransform>();
+            closeRt.anchorMin = new Vector2(0.5f, 0);
+            closeRt.anchorMax = new Vector2(0.5f, 0);
+            closeRt.pivot = new Vector2(0.5f, 0);
+            var closeImg = closeBtn.GetComponent<Image>();
+            closeImg.color = new Color(0.24f, 0.26f, 0.35f, 0.95f);
+            var closeTMP = closeBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (closeTMP != null)
+            {
+                closeTMP.fontSize = 16;
+                closeTMP.fontStyle = FontStyles.Bold;
+                closeTMP.color = Color.white;
+            }
+            so.FindProperty("closeSettingsButton").objectReferenceValue = closeBtn;
+
             modalRoot.SetActive(false);
         }
 

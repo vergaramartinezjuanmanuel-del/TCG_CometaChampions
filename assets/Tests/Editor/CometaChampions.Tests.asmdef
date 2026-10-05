@@ -3,6 +3,7 @@
     "rootNamespace": "CometaChampions.Tests",
     "references": [
         "CometaChampions.Core",
+        "CometaChampions.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -135,10 +135,28 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private Button settingsButton;
         [SerializeField] private GameObject settingsPanelRoot;
         [SerializeField] private Button closeSettingsButton;
-        [SerializeField] private Button sfxToggleButton;
-        [SerializeField] private Button musicToggleButton;
-        [SerializeField] private TextMeshProUGUI sfxToggleLabel;
-        [SerializeField] private TextMeshProUGUI musicToggleLabel;
+
+        [Header("Settings - Audio SFX Buttons (ON / OFF)")]
+        [SerializeField] private Button sfxOnButton;
+        [SerializeField] private Button sfxOffButton;
+        [SerializeField] private Image sfxOnButtonImage;
+        [SerializeField] private Image sfxOffButtonImage;
+        [SerializeField] private TextMeshProUGUI sfxOnButtonText;
+        [SerializeField] private TextMeshProUGUI sfxOffButtonText;
+
+        [Header("Settings - Audio Music Buttons (ON / OFF)")]
+        [SerializeField] private Button musicOnButton;
+        [SerializeField] private Button musicOffButton;
+        [SerializeField] private Image musicOnButtonImage;
+        [SerializeField] private Image musicOffButtonImage;
+        [SerializeField] private TextMeshProUGUI musicOnButtonText;
+        [SerializeField] private TextMeshProUGUI musicOffButtonText;
+
+        // Legacy / fallback toggle references
+        [SerializeField] private Button? sfxToggleButton;
+        [SerializeField] private Button? musicToggleButton;
+        [SerializeField] private TextMeshProUGUI? sfxToggleLabel;
+        [SerializeField] private TextMeshProUGUI? musicToggleLabel;
 
         // Card Viewport VFX (Rotating Vortex & Aura Particles)
         private Transform cardViewportTransform;
@@ -764,8 +782,47 @@ namespace CometaChampions.Runtime.UI
                 return;
             }
 
-            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Battle");
+            HideHomeContent();
+            LoadingScreenManager.Instance.LoadScene("Battle", "INICIANDO COMBATE...");
+        }
+
+        /// <summary>
+        /// Hides all Home UI, 3D viewport, particles, and modals before showing the loading screen.
+        /// </summary>
+        public void HideHomeContent()
+        {
+            // 1. Hide 3D viewport and scene objects
+            var centerObj = GameObject.Find("Center_Card3D_Viewport");
+            if (centerObj != null) centerObj.SetActive(false);
+
+            var bgCanvasObj = GameObject.Find("Background_Canvas");
+            if (bgCanvasObj != null) bgCanvasObj.SetActive(false);
+
+            var pedestalObj = GameObject.Find("Pedestal_3D");
+            if (pedestalObj != null) pedestalObj.SetActive(false);
+
+            if (cardVfxAnchor != null) cardVfxAnchor.SetActive(false);
+            if (cardVortexSwirlPs != null) cardVortexSwirlPs.gameObject.SetActive(false);
+            if (cardAuraOrbsPs != null) cardAuraOrbsPs.gameObject.SetActive(false);
+            if (pedestalSparksPs != null) pedestalSparksPs.gameObject.SetActive(false);
+
+            // 2. Hide all modals
+            if (deckModal != null) deckModal.gameObject.SetActive(false);
+            if (packShopModal != null) packShopModal.gameObject.SetActive(false);
+            if (packOpeningModal != null) packOpeningModal.gameObject.SetActive(false);
+            if (avatarModal != null) avatarModal.gameObject.SetActive(false);
+            if (dailyRewardModal != null) dailyRewardModal.gameObject.SetActive(false);
+            if (shopModalRoot != null) shopModalRoot.SetActive(false);
+            if (deckWarningModalRoot != null) deckWarningModalRoot.SetActive(false);
+            if (settingsPanelRoot != null) settingsPanelRoot.SetActive(false);
+
+            // 3. Disable main Canvas UI
+            var canvas = GetComponent<Canvas>();
+            if (canvas != null) canvas.enabled = false;
+
+            // 4. Disable Main Camera
+            var cam = Camera.main;
+            if (cam != null) cam.enabled = false;
         }
 
         private void ShowIncompleteDeckWarningModal(int currentCount)
@@ -1561,158 +1618,113 @@ namespace CometaChampions.Runtime.UI
         }
 
         // ============================================================
-        // Settings Panel (Audio Controls: SFX & Music Toggles)
+        // Settings Panel (Audio Controls: SFX & Music ON / OFF Buttons)
         // ============================================================
 
         private void SetupSettingsPanel()
         {
+            // 1. Locate Settings Gear Button if not already assigned
             if (settingsButton == null)
             {
-                var header = transform.Find("HeaderBar");
-                if (header == null) header = transform;
-                var btnObj = new GameObject("SettingsGearButton", typeof(RectTransform));
-                btnObj.transform.SetParent(header, false);
-                var rt = btnObj.GetComponent<RectTransform>();
-                rt.anchorMin = new Vector2(1f, 0.5f);
-                rt.anchorMax = new Vector2(1f, 0.5f);
-                rt.pivot = new Vector2(1f, 0.5f);
-                rt.anchoredPosition = new Vector2(-18f, 0f);
-                rt.sizeDelta = new Vector2(54f, 54f);
+                var gearTrans = transform.Find("HeaderBar/SettingsGearButton");
+                if (gearTrans != null)
+                {
+                    settingsButton = gearTrans.GetComponent<Button>();
+                }
+                else
+                {
+                    var header = transform.Find("HeaderBar");
+                    if (header == null) header = transform;
+                    var btnObj = new GameObject("SettingsGearButton", typeof(RectTransform));
+                    btnObj.transform.SetParent(header, false);
+                    var rt = btnObj.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(1f, 0.5f);
+                    rt.anchorMax = new Vector2(1f, 0.5f);
+                    rt.pivot = new Vector2(1f, 0.5f);
+                    rt.anchoredPosition = new Vector2(-18f, 0f);
+                    rt.sizeDelta = new Vector2(54f, 54f);
 
-                var bg = btnObj.AddComponent<Image>();
-                //bg.color = new Color(0.16f, 0.19f, 0.28f, 0.95f);
-                bg.sprite = Resources.Load<Sprite>("UI/SettingsGearIcon");
+                    var bg = btnObj.AddComponent<Image>();
+                    bg.sprite = Resources.Load<Sprite>("UI/SettingsGearIcon");
 
-                settingsButton = btnObj.AddComponent<Button>();
-
-                // var lblObj = new GameObject("Label", typeof(RectTransform));
-                // lblObj.transform.SetParent(btnObj.transform, false);
-                // var lrt = lblObj.GetComponent<RectTransform>();
-                // lrt.anchorMin = Vector2.zero;
-                // lrt.anchorMax = Vector2.one;
-                // lrt.sizeDelta = Vector2.zero;
-                // var tmp = lblObj.AddComponent<TextMeshProUGUI>();
-                // tmp.text = "⚙";
-                // tmp.fontSize = 24f;
-                // tmp.alignment = TextAlignmentOptions.Center;
-                // tmp.color = new Color(1f, 0.85f, 0.3f);
+                    settingsButton = btnObj.AddComponent<Button>();
+                }
             }
 
+            // 2. Locate SettingsModalRoot in Canvas hierarchy if not already assigned
             if (settingsPanelRoot == null)
             {
-                settingsPanelRoot = new GameObject("SettingsModalRoot", typeof(RectTransform));
-                settingsPanelRoot.transform.SetParent(transform, false);
-                var rootRt = settingsPanelRoot.GetComponent<RectTransform>();
-                rootRt.anchorMin = Vector2.zero;
-                rootRt.anchorMax = Vector2.one;
-                rootRt.sizeDelta = Vector2.zero;
-
-                var backdrop = settingsPanelRoot.AddComponent<Image>();
-                backdrop.color = new Color(0.02f, 0.03f, 0.06f, 0.82f);
-
-                var cardObj = new GameObject("SettingsDialog", typeof(RectTransform));
-                cardObj.transform.SetParent(settingsPanelRoot.transform, false);
-                var cardRt = cardObj.GetComponent<RectTransform>();
-                cardRt.anchorMin = new Vector2(0.5f, 0.5f);
-                cardRt.anchorMax = new Vector2(0.5f, 0.5f);
-                cardRt.pivot = new Vector2(0.5f, 0.5f);
-                cardRt.sizeDelta = new Vector2(420f, 300f);
-
-                var cardImg = cardObj.AddComponent<Image>();
-                cardImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
-
-                var titleObj = new GameObject("Title", typeof(RectTransform));
-                titleObj.transform.SetParent(cardObj.transform, false);
-                var trt = titleObj.GetComponent<RectTransform>();
-                trt.anchorMin = new Vector2(0f, 1f);
-                trt.anchorMax = new Vector2(1f, 1f);
-                trt.pivot = new Vector2(0.5f, 1f);
-                trt.anchoredPosition = new Vector2(0f, -18f);
-                trt.sizeDelta = new Vector2(-40f, 40f);
-                var titleTmp = titleObj.AddComponent<TextMeshProUGUI>();
-                titleTmp.text = "CONFIGURACIÓN DE AUDIO";
-                titleTmp.fontSize = 22f;
-                titleTmp.fontStyle = FontStyles.Bold;
-                titleTmp.alignment = TextAlignmentOptions.Center;
-                titleTmp.color = new Color(1f, 0.84f, 0.25f);
-
-                // SFX Toggle Button
-                var sfxBtnObj = new GameObject("SfxToggleButton", typeof(RectTransform));
-                sfxBtnObj.transform.SetParent(cardObj.transform, false);
-                var sfxRt = sfxBtnObj.GetComponent<RectTransform>();
-                sfxRt.anchorMin = new Vector2(0.5f, 0.5f);
-                sfxRt.anchorMax = new Vector2(0.5f, 0.5f);
-                sfxRt.pivot = new Vector2(0.5f, 0.5f);
-                sfxRt.anchoredPosition = new Vector2(0f, 25f);
-                sfxRt.sizeDelta = new Vector2(320f, 52f);
-                var sfxBg = sfxBtnObj.AddComponent<Image>();
-                sfxBg.color = new Color(0.16f, 0.45f, 0.28f, 0.95f);
-                sfxToggleButton = sfxBtnObj.AddComponent<Button>();
-
-                var sfxLblObj = new GameObject("SfxLabel", typeof(RectTransform));
-                sfxLblObj.transform.SetParent(sfxBtnObj.transform, false);
-                var sfxLrt = sfxLblObj.GetComponent<RectTransform>();
-                sfxLrt.anchorMin = Vector2.zero;
-                sfxLrt.anchorMax = Vector2.one;
-                sfxLrt.sizeDelta = Vector2.zero;
-                sfxToggleLabel = sfxLblObj.AddComponent<TextMeshProUGUI>();
-                sfxToggleLabel.fontSize = 18f;
-                sfxToggleLabel.fontStyle = FontStyles.Bold;
-                sfxToggleLabel.alignment = TextAlignmentOptions.Center;
-                sfxToggleLabel.color = Color.white;
-
-                // Music Toggle Button
-                var musBtnObj = new GameObject("MusicToggleButton", typeof(RectTransform));
-                musBtnObj.transform.SetParent(cardObj.transform, false);
-                var musRt = musBtnObj.GetComponent<RectTransform>();
-                musRt.anchorMin = new Vector2(0.5f, 0.5f);
-                musRt.anchorMax = new Vector2(0.5f, 0.5f);
-                musRt.pivot = new Vector2(0.5f, 0.5f);
-                musRt.anchoredPosition = new Vector2(0f, -40f);
-                musRt.sizeDelta = new Vector2(320f, 52f);
-                var musBg = musBtnObj.AddComponent<Image>();
-                musBg.color = new Color(0.16f, 0.45f, 0.28f, 0.95f);
-                musicToggleButton = musBtnObj.AddComponent<Button>();
-
-                var musLblObj = new GameObject("MusicLabel", typeof(RectTransform));
-                musLblObj.transform.SetParent(musBtnObj.transform, false);
-                var musLrt = musLblObj.GetComponent<RectTransform>();
-                musLrt.anchorMin = Vector2.zero;
-                musLrt.anchorMax = Vector2.one;
-                musLrt.sizeDelta = Vector2.zero;
-                musicToggleLabel = musLblObj.AddComponent<TextMeshProUGUI>();
-                musicToggleLabel.fontSize = 18f;
-                musicToggleLabel.fontStyle = FontStyles.Bold;
-                musicToggleLabel.alignment = TextAlignmentOptions.Center;
-                musicToggleLabel.color = Color.white;
-
-                // Close Button
-                var closeObj = new GameObject("CloseSettingsButton", typeof(RectTransform));
-                closeObj.transform.SetParent(cardObj.transform, false);
-                var crt = closeObj.GetComponent<RectTransform>();
-                crt.anchorMin = new Vector2(0.5f, 0f);
-                crt.anchorMax = new Vector2(0.5f, 0f);
-                crt.pivot = new Vector2(0.5f, 0f);
-                crt.anchoredPosition = new Vector2(0f, 18f);
-                crt.sizeDelta = new Vector2(180f, 42f);
-                var closeBg = closeObj.AddComponent<Image>();
-                closeBg.color = new Color(0.24f, 0.26f, 0.35f, 0.95f);
-                closeSettingsButton = closeObj.AddComponent<Button>();
-
-                var closeLblObj = new GameObject("CloseLabel", typeof(RectTransform));
-                closeLblObj.transform.SetParent(closeObj.transform, false);
-                var clrt = closeLblObj.GetComponent<RectTransform>();
-                clrt.anchorMin = Vector2.zero;
-                clrt.anchorMax = Vector2.one;
-                clrt.sizeDelta = Vector2.zero;
-                var closeTmp = closeLblObj.AddComponent<TextMeshProUGUI>();
-                closeTmp.text = "CERRAR";
-                closeTmp.fontSize = 16f;
-                closeTmp.fontStyle = FontStyles.Bold;
-                closeTmp.alignment = TextAlignmentOptions.Center;
-                closeTmp.color = Color.white;
+                var rootTrans = transform.Find("SettingsModalRoot");
+                if (rootTrans != null)
+                {
+                    settingsPanelRoot = rootTrans.gameObject;
+                }
             }
 
+            // 3. Resolve child controls from SettingsModalRoot if fields are null
+            if (settingsPanelRoot != null)
+            {
+                if (closeSettingsButton == null)
+                {
+                    var closeTrans = settingsPanelRoot.transform.Find("SettingsDialogWindow/CloseSettingsButton") 
+                                     ?? settingsPanelRoot.transform.Find("SettingsDialog/CloseSettingsButton");
+                    if (closeTrans != null) closeSettingsButton = closeTrans.GetComponent<Button>();
+                }
+
+                if (sfxOnButton == null)
+                {
+                    var btn = settingsPanelRoot.transform.Find("SettingsDialogWindow/SfxRow/SfxOnButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialog/SfxRow/SfxOnButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialogWindow/SfxOnButton");
+                    if (btn != null)
+                    {
+                        sfxOnButton = btn.GetComponent<Button>();
+                        sfxOnButtonImage = btn.GetComponent<Image>();
+                        sfxOnButtonText = btn.GetComponentInChildren<TextMeshProUGUI>();
+                    }
+                }
+
+                if (sfxOffButton == null)
+                {
+                    var btn = settingsPanelRoot.transform.Find("SettingsDialogWindow/SfxRow/SfxOffButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialog/SfxRow/SfxOffButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialogWindow/SfxOffButton");
+                    if (btn != null)
+                    {
+                        sfxOffButton = btn.GetComponent<Button>();
+                        sfxOffButtonImage = btn.GetComponent<Image>();
+                        sfxOffButtonText = btn.GetComponentInChildren<TextMeshProUGUI>();
+                    }
+                }
+
+                if (musicOnButton == null)
+                {
+                    var btn = settingsPanelRoot.transform.Find("SettingsDialogWindow/MusicRow/MusicOnButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialog/MusicRow/MusicOnButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialogWindow/MusicOnButton");
+                    if (btn != null)
+                    {
+                        musicOnButton = btn.GetComponent<Button>();
+                        musicOnButtonImage = btn.GetComponent<Image>();
+                        musicOnButtonText = btn.GetComponentInChildren<TextMeshProUGUI>();
+                    }
+                }
+
+                if (musicOffButton == null)
+                {
+                    var btn = settingsPanelRoot.transform.Find("SettingsDialogWindow/MusicRow/MusicOffButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialog/MusicRow/MusicOffButton")
+                              ?? settingsPanelRoot.transform.Find("SettingsDialogWindow/MusicOffButton");
+                    if (btn != null)
+                    {
+                        musicOffButton = btn.GetComponent<Button>();
+                        musicOffButtonImage = btn.GetComponent<Image>();
+                        musicOffButtonText = btn.GetComponentInChildren<TextMeshProUGUI>();
+                    }
+                }
+            }
+
+            // 4. Wire Click Listeners
             if (settingsButton != null)
             {
                 settingsButton.onClick.RemoveAllListeners();
@@ -1725,6 +1737,31 @@ namespace CometaChampions.Runtime.UI
                 closeSettingsButton.onClick.AddListener(CloseSettingsPanel);
             }
 
+            if (sfxOnButton != null)
+            {
+                sfxOnButton.onClick.RemoveAllListeners();
+                sfxOnButton.onClick.AddListener(() => SetSfxEnabled(true));
+            }
+
+            if (sfxOffButton != null)
+            {
+                sfxOffButton.onClick.RemoveAllListeners();
+                sfxOffButton.onClick.AddListener(() => SetSfxEnabled(false));
+            }
+
+            if (musicOnButton != null)
+            {
+                musicOnButton.onClick.RemoveAllListeners();
+                musicOnButton.onClick.AddListener(() => SetMusicEnabled(true));
+            }
+
+            if (musicOffButton != null)
+            {
+                musicOffButton.onClick.RemoveAllListeners();
+                musicOffButton.onClick.AddListener(() => SetMusicEnabled(false));
+            }
+
+            // Also support legacy toggle buttons if present
             if (sfxToggleButton != null)
             {
                 sfxToggleButton.onClick.RemoveAllListeners();
@@ -1742,13 +1779,13 @@ namespace CometaChampions.Runtime.UI
                 settingsPanelRoot.SetActive(false);
             }
 
-            RefreshSettingsLabels();
+            RefreshSettingsButtons();
         }
 
         public void OpenSettingsPanel()
         {
             AudioManager.Instance.PlaySfx(SfxType.ModalOpen);
-            RefreshSettingsLabels();
+            RefreshSettingsButtons();
             if (settingsPanelRoot != null)
             {
                 settingsPanelRoot.transform.SetAsLastSibling();
@@ -1765,29 +1802,89 @@ namespace CometaChampions.Runtime.UI
             }
         }
 
+        public void SetSfxEnabled(bool enabled)
+        {
+            if (AudioManager.Instance.IsSfxEnabled != enabled)
+            {
+                AudioManager.Instance.IsSfxEnabled = enabled;
+                if (enabled)
+                {
+                    AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+                }
+            }
+            RefreshSettingsButtons();
+        }
+
+        public void SetMusicEnabled(bool enabled)
+        {
+            if (AudioManager.Instance.IsMusicEnabled != enabled)
+            {
+                AudioManager.Instance.IsMusicEnabled = enabled;
+                if (AudioManager.Instance.IsSfxEnabled)
+                {
+                    AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
+                }
+            }
+            RefreshSettingsButtons();
+        }
+
         private void ToggleSfx()
         {
-            bool next = !AudioManager.Instance.IsSfxEnabled;
-            AudioManager.Instance.IsSfxEnabled = next;
-            if (next)
-            {
-                AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
-            }
-            RefreshSettingsLabels();
+            SetSfxEnabled(!AudioManager.Instance.IsSfxEnabled);
         }
 
         private void ToggleMusic()
         {
-            AudioManager.Instance.IsMusicEnabled = !AudioManager.Instance.IsMusicEnabled;
-            AudioManager.Instance.PlaySfx(SfxType.ButtonClick);
-            RefreshSettingsLabels();
+            SetMusicEnabled(!AudioManager.Instance.IsMusicEnabled);
         }
 
-        private void RefreshSettingsLabels()
+        private void RefreshSettingsButtons()
         {
             bool sfxOn = AudioManager.Instance.IsSfxEnabled;
             bool musicOn = AudioManager.Instance.IsMusicEnabled;
 
+            // Palette colors for active vs inactive state
+            Color activeGreen = new Color(0.18f, 0.62f, 0.31f, 1f);      // Vibrant emerald green
+            Color activeRed = new Color(0.85f, 0.22f, 0.23f, 1f);        // Vibrant ruby red
+            Color inactiveDark = new Color(0.14f, 0.16f, 0.22f, 0.95f);   // Neutral dark
+            Color textActive = Color.white;
+            Color textInactive = new Color(0.60f, 0.64f, 0.74f, 0.90f);
+
+            // Update SFX ON/OFF buttons
+            if (sfxOnButton != null)
+            {
+                var img = sfxOnButtonImage ?? sfxOnButton.GetComponent<Image>();
+                if (img != null) img.color = sfxOn ? activeGreen : inactiveDark;
+                var txt = sfxOnButtonText ?? sfxOnButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.color = sfxOn ? textActive : textInactive;
+            }
+
+            if (sfxOffButton != null)
+            {
+                var img = sfxOffButtonImage ?? sfxOffButton.GetComponent<Image>();
+                if (img != null) img.color = !sfxOn ? activeRed : inactiveDark;
+                var txt = sfxOffButtonText ?? sfxOffButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.color = !sfxOn ? textActive : textInactive;
+            }
+
+            // Update Music ON/OFF buttons
+            if (musicOnButton != null)
+            {
+                var img = musicOnButtonImage ?? musicOnButton.GetComponent<Image>();
+                if (img != null) img.color = musicOn ? activeGreen : inactiveDark;
+                var txt = musicOnButtonText ?? musicOnButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.color = musicOn ? textActive : textInactive;
+            }
+
+            if (musicOffButton != null)
+            {
+                var img = musicOffButtonImage ?? musicOffButton.GetComponent<Image>();
+                if (img != null) img.color = !musicOn ? activeRed : inactiveDark;
+                var txt = musicOffButtonText ?? musicOffButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.color = !musicOn ? textActive : textInactive;
+            }
+
+            // Update legacy labels if present
             if (sfxToggleLabel != null)
             {
                 sfxToggleLabel.text = sfxOn ? "EFECTOS (SFX): ENCENDIDO" : "EFECTOS (SFX): APAGADO";
@@ -1795,10 +1892,7 @@ namespace CometaChampions.Runtime.UI
             if (sfxToggleButton != null)
             {
                 var img = sfxToggleButton.GetComponent<Image>();
-                if (img != null)
-                {
-                    img.color = sfxOn ? new Color(0.16f, 0.52f, 0.28f, 0.95f) : new Color(0.42f, 0.16f, 0.18f, 0.95f);
-                }
+                if (img != null) img.color = sfxOn ? activeGreen : activeRed;
             }
 
             if (musicToggleLabel != null)
@@ -1808,10 +1902,7 @@ namespace CometaChampions.Runtime.UI
             if (musicToggleButton != null)
             {
                 var img = musicToggleButton.GetComponent<Image>();
-                if (img != null)
-                {
-                    img.color = musicOn ? new Color(0.16f, 0.52f, 0.28f, 0.95f) : new Color(0.42f, 0.16f, 0.18f, 0.95f);
-                }
+                if (img != null) img.color = musicOn ? activeGreen : activeRed;
             }
         }
 

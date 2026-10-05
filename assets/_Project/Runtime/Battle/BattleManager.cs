@@ -490,8 +490,39 @@ namespace CometaChampions.Runtime.Battle
 
         private void HandleReturnHome()
         {
-            AudioManager.Instance.PlaySfx(SfxType.SceneTransition);
-            SceneManager.LoadScene("Home");
+            HideBattleContent();
+            LoadingScreenManager.Instance.LoadScene("Home", "REGRESANDO AL ÁLBUM...");
+        }
+
+        /// <summary>
+        /// Hides all Battle UI, modals, lanes, and cameras before showing the loading screen.
+        /// </summary>
+        public void HideBattleContent()
+        {
+            var battleCanvas = GameObject.Find("BattleCanvas");
+            if (battleCanvas != null)
+            {
+                var canvas = battleCanvas.GetComponent<Canvas>();
+                if (canvas != null) canvas.enabled = false;
+                battleCanvas.SetActive(false);
+            }
+
+            if (headerView != null) headerView.gameObject.SetActive(false);
+            if (handView != null) handView.gameObject.SetActive(false);
+            if (gameOverModal != null) gameOverModal.gameObject.SetActive(false);
+            if (helpModal != null) helpModal.gameObject.SetActive(false);
+            if (mulliganModal != null) mulliganModal.gameObject.SetActive(false);
+
+            if (laneViews != null)
+            {
+                foreach (var lane in laneViews)
+                {
+                    if (lane != null) lane.gameObject.SetActive(false);
+                }
+            }
+
+            var cam = Camera.main;
+            if (cam != null) cam.enabled = false;
         }
 
         /// <summary>
