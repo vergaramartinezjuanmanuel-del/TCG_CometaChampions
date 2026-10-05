@@ -77,8 +77,10 @@ namespace CometaChampions.Runtime.Cards
         public const float ReferenceWidth = 750f;
         public const float ReferenceHeight = 1050f;
 
-        private const string FontAssetEditorPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
-        private const string FontFileEditorPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf";
+        private const string FontAssetEditorPath = "Assets/Resources/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
+        private const string FontAssetEditorLegacyPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
+        private const string FontFileEditorPath = "Assets/Resources/Tarjetas/SemiExpanded ExtraBold Italic.otf";
+        private const string FontFileEditorLegacyPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf";
 
         private static TMP_FontAsset cachedCardFont;
         private static Sprite cachedCircleSprite;
@@ -95,10 +97,12 @@ namespace CometaChampions.Runtime.Cards
             if (cachedCardFont != null) return cachedCardFont;
 
 #if UNITY_EDITOR
-            cachedCardFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetEditorPath);
+            cachedCardFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetEditorPath)
+                             ?? UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetEditorLegacyPath);
             if (cachedCardFont != null) return cachedCardFont;
 
-            var editorSourceFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(FontFileEditorPath);
+            var editorSourceFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(FontFileEditorPath)
+                                   ?? UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(FontFileEditorLegacyPath);
             if (editorSourceFont != null)
             {
                 cachedCardFont = TMP_FontAsset.CreateFontAsset(
@@ -119,7 +123,8 @@ namespace CometaChampions.Runtime.Cards
             }
 #endif
 
-            var resFontAsset = Resources.Load<TMP_FontAsset>("Fonts/SemiExpanded ExtraBold Italic SDF")
+            var resFontAsset = Resources.Load<TMP_FontAsset>("Tarjetas/SemiExpanded ExtraBold Italic SDF")
+                               ?? Resources.Load<TMP_FontAsset>("Fonts/SemiExpanded ExtraBold Italic SDF")
                                ?? Resources.Load<TMP_FontAsset>("SemiExpanded ExtraBold Italic SDF");
             if (resFontAsset != null)
             {
@@ -127,12 +132,21 @@ namespace CometaChampions.Runtime.Cards
                 return cachedCardFont;
             }
 
-            string diskFontPath = Path.Combine(Application.dataPath, "_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf");
-            if (File.Exists(diskFontPath))
+            if (Application.platform != RuntimePlatform.Android && Application.platform != RuntimePlatform.IPhonePlayer)
             {
-                var diskFont = new Font(diskFontPath);
-                cachedCardFont = TMP_FontAsset.CreateFontAsset(diskFont);
-                if (cachedCardFont != null) return cachedCardFont;
+                string[] diskPaths = {
+                    Path.Combine(Application.dataPath, "Resources/Tarjetas/SemiExpanded ExtraBold Italic.otf"),
+                    Path.Combine(Application.dataPath, "_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf")
+                };
+                foreach (var diskFontPath in diskPaths)
+                {
+                    if (File.Exists(diskFontPath))
+                    {
+                        var diskFont = new Font(diskFontPath);
+                        cachedCardFont = TMP_FontAsset.CreateFontAsset(diskFont);
+                        if (cachedCardFont != null) return cachedCardFont;
+                    }
+                }
             }
 
             return TMP_Settings.defaultFontAsset;
@@ -313,7 +327,7 @@ namespace CometaChampions.Runtime.Cards
                             ?? Card3D.LoadSpriteFromCardsFolder(cardData.Image)
                             ?? Card3D.GetReversoThumbnail("oro");
             artImg.sprite = artSprite;
-            artImg.color = Color.white;
+            artImg.color = artSprite != null ? Color.white : new Color(0.08f, 0.10f, 0.14f, 1f);
             artImg.preserveAspect = false;
             artImg.raycastTarget = false;
 
@@ -332,7 +346,7 @@ namespace CometaChampions.Runtime.Cards
             SetStretch(costIconGo.GetComponent<RectTransform>(), 0f);
             var costIconImg = costIconGo.AddComponent<Image>();
             costIconImg.sprite = Card3D.LoadSpriteFromCardsFolder(CardArtMapper.GetCostIconPath());
-            costIconImg.color = Color.white;
+            costIconImg.color = costIconImg.sprite != null ? Color.white : Color.clear;
             costIconImg.preserveAspect = true;
             costIconImg.raycastTarget = false;
 
@@ -344,7 +358,7 @@ namespace CometaChampions.Runtime.Cards
             SetRectFromTopLeft(clanBannerGo.GetComponent<RectTransform>(), 563f, 0f, 715f, 147f);
             var clanBannerImg = clanBannerGo.AddComponent<Image>();
             clanBannerImg.sprite = Card3D.LoadSpriteFromCardsFolder(CardArtMapper.GetClanBannerPath(clanType));
-            clanBannerImg.color = Color.white;
+            clanBannerImg.color = clanBannerImg.sprite != null ? Color.white : Color.clear;
             clanBannerImg.preserveAspect = true;
             clanBannerImg.raycastTarget = false;
 
@@ -353,7 +367,7 @@ namespace CometaChampions.Runtime.Cards
             SetRectFromTopLeft(nameBarGo.GetComponent<RectTransform>(), 0f, 0f, ReferenceWidth, ReferenceHeight);
             var nameBarImg = nameBarGo.AddComponent<Image>();
             nameBarImg.sprite = Card3D.LoadSpriteFromCardsFolder(CardArtMapper.GetClanBgPath(clanType));
-            nameBarImg.color = Color.white;
+            nameBarImg.color = nameBarImg.sprite != null ? Color.white : Color.clear;
             nameBarImg.preserveAspect = false;
             nameBarImg.raycastTarget = false;
 
@@ -540,6 +554,7 @@ namespace CometaChampions.Runtime.Cards
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 50f;
             cam.targetTexture = rt;
+            cam.cullingMask = ~0; // Ensure all UI and geometry layers are rendered
             cam.enabled = false;
 
             var canvasGo = new GameObject("DynamicCardOffscreenCanvas", typeof(RectTransform));
@@ -576,6 +591,7 @@ namespace CometaChampions.Runtime.Cards
             Canvas.ForceUpdateCanvases();
 
             cam.Render();
+            GL.Flush(); // Ensure GPU offscreen commands finish on mobile GPUs before ReadPixels
 
             RenderTexture.active = rt;
             var resultTex = new Texture2D(width, height, TextureFormat.RGBA32, true);

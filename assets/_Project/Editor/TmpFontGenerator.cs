@@ -13,8 +13,10 @@ namespace CometaChampions.Editor
     /// </summary>
     public static class TmpFontGenerator
     {
-        public const string SourceFontPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf";
-        public const string OutputSdfAssetPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
+        public const string SourceFontPath = "Assets/Resources/Tarjetas/SemiExpanded ExtraBold Italic.otf";
+        public const string OutputSdfAssetPath = "Assets/Resources/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
+        public const string LegacySourceFontPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic.otf";
+        public const string LegacyOutputSdfAssetPath = "Assets/_Project/Art/Tarjetas/SemiExpanded ExtraBold Italic SDF.asset";
 
         private const string PrewarmCharacters =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" +
@@ -25,7 +27,7 @@ namespace CometaChampions.Editor
         {
             EditorApplication.delayCall += () =>
             {
-                if (!File.Exists(OutputSdfAssetPath) && File.Exists(SourceFontPath))
+                if (!File.Exists(OutputSdfAssetPath) && !File.Exists(LegacyOutputSdfAssetPath))
                 {
                     GenerateTmpFontAsset();
                 }
@@ -36,7 +38,8 @@ namespace CometaChampions.Editor
         [MenuItem("Cometa Champions/Generate Card TMP Font")]
         public static TMP_FontAsset GenerateTmpFontAsset()
         {
-            var sourceFont = AssetDatabase.LoadAssetAtPath<Font>(SourceFontPath);
+            var sourceFont = AssetDatabase.LoadAssetAtPath<Font>(SourceFontPath)
+                             ?? AssetDatabase.LoadAssetAtPath<Font>(LegacySourceFontPath);
             if (sourceFont == null)
             {
                 Debug.LogWarning($"[TmpFontGenerator] Source font not found at: {SourceFontPath}");

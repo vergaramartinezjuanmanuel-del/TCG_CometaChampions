@@ -107,11 +107,16 @@ namespace CometaChampions.Runtime.Cards
             {
                 return Shader.Find("Standard")
                        ?? Shader.Find("Unlit/Color")
+                       ?? Shader.Find("Mobile/Diffuse")
+                       ?? Shader.Find("UI/Default")
                        ?? Shader.Find("Legacy Shaders/Diffuse");
             }
 
             return Shader.Find("Standard")
                    ?? Shader.Find("Unlit/Texture")
+                   ?? Shader.Find("Mobile/Diffuse")
+                   ?? Shader.Find("Mobile/Unlit (Supports Lightmap)")
+                   ?? Shader.Find("UI/Default")
                    ?? Shader.Find("Legacy Shaders/Diffuse");
         }
 
@@ -470,19 +475,71 @@ namespace CometaChampions.Runtime.Cards
             }
         }
 
-        private static string GetResourceCardPath(string relativePath)
+        private static List<string> GetResourceCandidates(string relativePath)
         {
-            if (string.IsNullOrEmpty(relativePath)) return string.Empty;
-            string path = relativePath.Replace('\\', '/');
-            if (path.StartsWith("/")) path = path.Substring(1);
+            var candidates = new List<string>();
+            if (string.IsNullOrWhiteSpace(relativePath)) return candidates;
 
-            int lastDot = path.LastIndexOf('.');
-            if (lastDot > 0)
+            string clean = relativePath.Replace('\\', '/').Trim();
+            if (clean.StartsWith("/")) clean = clean.Substring(1);
+
+            int dotIdx = clean.LastIndexOf('.');
+            string pathNoExt = dotIdx > 0 ? clean.Substring(0, dotIdx) : clean;
+
+            string tarjetasRel = CardArtMapper.ConvertLegacyPathToTarjetasPath(relativePath);
+            string tarjetasNoExt = string.Empty;
+            if (!string.IsNullOrWhiteSpace(tarjetasRel))
             {
-                path = path.Substring(0, lastDot);
+                string tClean = tarjetasRel.Replace('\\', '/').Trim();
+                if (tClean.StartsWith("/")) tClean = tClean.Substring(1);
+                int tDot = tClean.LastIndexOf('.');
+                tarjetasNoExt = tDot > 0 ? tClean.Substring(0, tDot) : tClean;
             }
 
-            return "Cards/" + path;
+            var basePaths = new List<string>();
+            if (!string.IsNullOrEmpty(tarjetasNoExt))
+            {
+                basePaths.Add(tarjetasNoExt);
+            }
+            basePaths.Add(pathNoExt);
+
+            var rawCandidates = new List<string>();
+            foreach (var bp in basePaths)
+            {
+                if (bp.StartsWith("Tarjetas/", StringComparison.OrdinalIgnoreCase))
+                {
+                    rawCandidates.Add(bp);
+                    rawCandidates.Add(bp.Substring("Tarjetas/".Length));
+                    rawCandidates.Add("Cards/" + bp);
+                }
+                else
+                {
+                    rawCandidates.Add(bp);
+                    rawCandidates.Add("Tarjetas/" + bp);
+                    rawCandidates.Add("Cards/" + bp);
+                }
+            }
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var raw in rawCandidates)
+            {
+                string[] forms = {
+                    raw,
+                    raw.Normalize(NormalizationForm.FormC),
+                    raw.Normalize(NormalizationForm.FormD),
+                    CardArtMapper.RemoveDiacritics(raw)
+                };
+
+                foreach (var f in forms)
+                {
+                    if (seen.Add(f))
+                    {
+                        candidates.Add(f);
+                    }
+                }
+            }
+
+            return candidates;
         }
 
         public static Texture2D LoadTextureFromCardsFolder(string relativePath)
@@ -496,15 +553,35 @@ namespace CometaChampions.Runtime.Cards
 
             string tarjetasRel = CardArtMapper.ConvertLegacyPathToTarjetasPath(relativePath);
 
+            // 1. Primary: Unity Resources (Universal across Android, iOS, Standalone, Editor)
+            var resourceCandidates = GetResourceCandidates(relativePath);
+            foreach (var resPath in resourceCandidates)
+            {
+                var resTex = Resources.Load<Texture2D>(resPath);
+                if (resTex != null)
+                {
+                    TextureCache[relativePath] = resTex;
+                    return resTex;
+                }
+            }
+
 #if UNITY_EDITOR
-            // 1. Editor AssetDatabase: prioritize new flat art in Assets/_Project/Art/Tarjetas/
+            // 2. Editor AssetDatabase Fallbacks
             var priorityEditorPaths = new List<string>();
+            foreach (var resPath in resourceCandidates)
+            {
+                priorityEditorPaths.Add("Assets/Resources/" + resPath + ".png");
+                priorityEditorPaths.Add("Assets/Resources/" + resPath + ".jpg");
+                priorityEditorPaths.Add("Assets/_Project/Art/" + resPath + ".png");
+                priorityEditorPaths.Add("Assets/_Project/Art/" + resPath + ".jpg");
+            }
             if (!string.IsNullOrEmpty(tarjetasRel))
             {
+                priorityEditorPaths.Add("Assets/Resources/" + tarjetasRel);
                 priorityEditorPaths.Add("Assets/_Project/Art/" + tarjetasRel);
             }
+            priorityEditorPaths.Add("Assets/Resources/" + relativePath);
             priorityEditorPaths.Add("Assets/_Project/Art/" + relativePath);
-            priorityEditorPaths.Add("Assets/_Project/Art/Tarjetas/" + relativePath);
 
             foreach (var rawPath in priorityEditorPaths)
             {
@@ -524,100 +601,39 @@ namespace CometaChampions.Runtime.Cards
             }
 #endif
 
-            // 2. Direct file read for new flat art in Assets/_Project/Art/Tarjetas/
-            var priorityDiskFiles = new List<string>();
-            if (!string.IsNullOrEmpty(tarjetasRel))
+            // 3. Direct file read fallback (ONLY on standalone desktop where files may reside on disk)
+            if (Application.platform != RuntimePlatform.Android && Application.platform != RuntimePlatform.IPhonePlayer)
             {
-                priorityDiskFiles.Add(Path.Combine(Application.dataPath, "_Project/Art", tarjetasRel));
-            }
-            priorityDiskFiles.Add(Path.Combine(Application.dataPath, "_Project/Art", relativePath));
-            priorityDiskFiles.Add(Path.Combine(Application.dataPath, "_Project/Art/Tarjetas", relativePath));
-
-            foreach (var rawFullPath in priorityDiskFiles)
-            {
-                string[] normForms = {
-                    rawFullPath.Normalize(NormalizationForm.FormC),
-                    rawFullPath.Normalize(NormalizationForm.FormD)
-                };
-                foreach (var fullPath in normForms)
+                var priorityDiskFiles = new List<string>();
+                if (!string.IsNullOrEmpty(tarjetasRel))
                 {
-                    if (File.Exists(fullPath))
+                    priorityDiskFiles.Add(Path.Combine(Application.dataPath, "Resources", tarjetasRel));
+                    priorityDiskFiles.Add(Path.Combine(Application.dataPath, "_Project/Art", tarjetasRel));
+                }
+                priorityDiskFiles.Add(Path.Combine(Application.dataPath, "Resources", relativePath));
+                priorityDiskFiles.Add(Path.Combine(Application.dataPath, "_Project/Art", relativePath));
+
+                foreach (var rawFullPath in priorityDiskFiles)
+                {
+                    string[] normForms = {
+                        rawFullPath.Normalize(NormalizationForm.FormC),
+                        rawFullPath.Normalize(NormalizationForm.FormD)
+                    };
+                    foreach (var fullPath in normForms)
                     {
-                        byte[] bytes = File.ReadAllBytes(fullPath);
-                        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
-                        if (tex.LoadImage(bytes))
+                        if (File.Exists(fullPath))
                         {
-                            tex.name = Path.GetFileNameWithoutExtension(relativePath);
-                            tex.filterMode = FilterMode.Trilinear;
-                            tex.anisoLevel = 4;
-                            TextureCache[relativePath] = tex;
-                            return tex;
+                            byte[] bytes = File.ReadAllBytes(fullPath);
+                            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                            if (tex.LoadImage(bytes))
+                            {
+                                tex.name = Path.GetFileNameWithoutExtension(relativePath);
+                                tex.filterMode = FilterMode.Trilinear;
+                                tex.anisoLevel = 4;
+                                TextureCache[relativePath] = tex;
+                                return tex;
+                            }
                         }
-                    }
-                }
-            }
-
-            // 3. Unity Resources fallback (e.g. for Reverso_Export or packaged Resources)
-            string[] resourceCandidates = string.IsNullOrEmpty(tarjetasRel)
-                ? new[] { GetResourceCardPath(relativePath) }
-                : new[] { GetResourceCardPath(tarjetasRel), GetResourceCardPath(relativePath) };
-
-            foreach (var resPath in resourceCandidates)
-            {
-                var resTex = Resources.Load<Texture2D>(resPath);
-                if (resTex != null)
-                {
-                    TextureCache[relativePath] = resTex;
-                    return resTex;
-                }
-            }
-
-#if UNITY_EDITOR
-            // 4. Legacy Editor AssetDatabase Fallbacks
-            string[] legacyEditorPaths = {
-                "Assets/Resources/Cards/" + relativePath,
-                "Assets/_Project/Art/Cards/" + relativePath,
-                "Assets/_Project/Resources/Cards/" + relativePath
-            };
-
-            foreach (var rawPath in legacyEditorPaths)
-            {
-                string[] normForms = {
-                    rawPath.Normalize(NormalizationForm.FormC),
-                    rawPath.Normalize(NormalizationForm.FormD)
-                };
-                foreach (var assetPath in normForms)
-                {
-                    var assetTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
-                    if (assetTex != null)
-                    {
-                        TextureCache[relativePath] = assetTex;
-                        return assetTex;
-                    }
-                }
-            }
-#endif
-
-            // 5. Legacy Disk Fallbacks
-            string[] legacyDiskFiles = {
-                Path.Combine(Application.dataPath, "Resources/Cards", relativePath),
-                Path.Combine(Application.dataPath, "_Project/Art/Cards", relativePath),
-                Path.Combine(Application.dataPath, "_Project/Resources/Cards", relativePath)
-            };
-
-            foreach (var fullPath in legacyDiskFiles)
-            {
-                if (File.Exists(fullPath))
-                {
-                    byte[] bytes = File.ReadAllBytes(fullPath);
-                    var tex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
-                    if (tex.LoadImage(bytes))
-                    {
-                        tex.name = Path.GetFileNameWithoutExtension(relativePath);
-                        tex.filterMode = FilterMode.Trilinear;
-                        tex.anisoLevel = 4;
-                        TextureCache[relativePath] = tex;
-                        return tex;
                     }
                 }
             }
@@ -643,15 +659,59 @@ namespace CometaChampions.Runtime.Cards
 
             string tarjetasRel = CardArtMapper.ConvertLegacyPathToTarjetasPath(relativePath);
 
+            // 1. Primary: Unity Resources (Universal across Android, iOS, Standalone, Editor)
+            var resourceCandidates = GetResourceCandidates(relativePath);
+            foreach (var resPath in resourceCandidates)
+            {
+                // 1a. Try single Sprite directly
+                var resSprite = Resources.Load<Sprite>(resPath);
+                if (resSprite != null)
+                {
+                    SpriteCache[relativePath] = resSprite;
+                    return resSprite;
+                }
+
+                // 1b. Try Multiple Sprite sheet (BG_Milenials, costo, pleca, espada2, etc.)
+                var allSprites = Resources.LoadAll<Sprite>(resPath);
+                if (allSprites != null && allSprites.Length > 0 && allSprites[0] != null)
+                {
+                    SpriteCache[relativePath] = allSprites[0];
+                    return allSprites[0];
+                }
+
+                // 1c. Try Texture2D and create Sprite (Heroes, Bestias, Trompos, Arenas)
+                var resTex = Resources.Load<Texture2D>(resPath);
+                if (resTex != null)
+                {
+                    var created = Sprite.Create(
+                        resTex,
+                        new Rect(0, 0, resTex.width, resTex.height),
+                        new Vector2(0.5f, 0.5f),
+                        100f
+                    );
+                    created.name = resTex.name + "_Sprite";
+                    SpriteCache[relativePath] = created;
+                    return created;
+                }
+            }
+
 #if UNITY_EDITOR
-            // 1. Prioritize new flat art and UI sprites in Assets/_Project/Art/Tarjetas/
+            // 2. Editor AssetDatabase Fallbacks
             var priorityEditorPaths = new List<string>();
+            foreach (var resPath in resourceCandidates)
+            {
+                priorityEditorPaths.Add("Assets/Resources/" + resPath + ".png");
+                priorityEditorPaths.Add("Assets/Resources/" + resPath + ".jpg");
+                priorityEditorPaths.Add("Assets/_Project/Art/" + resPath + ".png");
+                priorityEditorPaths.Add("Assets/_Project/Art/" + resPath + ".jpg");
+            }
             if (!string.IsNullOrEmpty(tarjetasRel))
             {
+                priorityEditorPaths.Add("Assets/Resources/" + tarjetasRel);
                 priorityEditorPaths.Add("Assets/_Project/Art/" + tarjetasRel);
             }
+            priorityEditorPaths.Add("Assets/Resources/" + relativePath);
             priorityEditorPaths.Add("Assets/_Project/Art/" + relativePath);
-            priorityEditorPaths.Add("Assets/_Project/Art/Tarjetas/" + relativePath);
 
             foreach (var rawPath in priorityEditorPaths)
             {
@@ -694,17 +754,17 @@ namespace CometaChampions.Runtime.Cards
             }
 #endif
 
-            // 2. Load Texture2D (which also prioritizes Assets/_Project/Art/Tarjetas/ on disk) and create Sprite
-            var tex = LoadTextureFromCardsFolder(relativePath);
-            if (tex != null)
+            // 3. Fallback: Load Texture2D from disk / legacy and convert to Sprite
+            var fallbackTex = LoadTextureFromCardsFolder(relativePath);
+            if (fallbackTex != null)
             {
                 var sprite = Sprite.Create(
-                    tex,
-                    new Rect(0, 0, tex.width, tex.height),
+                    fallbackTex,
+                    new Rect(0, 0, fallbackTex.width, fallbackTex.height),
                     new Vector2(0.5f, 0.5f),
                     100f
                 );
-                sprite.name = tex.name + "_Sprite";
+                sprite.name = fallbackTex.name + "_Sprite";
                 SpriteCache[relativePath] = sprite;
                 return sprite;
             }

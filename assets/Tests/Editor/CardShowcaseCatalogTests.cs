@@ -169,7 +169,9 @@ namespace CometaChampions.Tests
             string projectRoot = "/Users/balasanyana/Desktop/Proyectos/TCG_CometaChampions";
             if (!Directory.Exists(projectRoot)) return; // Skip only if running on a different machine
 
-            string artRoot = Path.Combine(projectRoot, "Assets/_Project/Art");
+            string artRoot = Directory.Exists(Path.Combine(projectRoot, "Assets/Resources/Tarjetas"))
+                ? Path.Combine(projectRoot, "Assets/Resources")
+                : Path.Combine(projectRoot, "Assets/_Project/Art");
 
             static bool FileExistsUnicodeSafe(string fullPath)
             {
