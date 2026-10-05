@@ -93,6 +93,37 @@ namespace CometaChampions.Editor
             Debug.Log("[HomeSceneBuilder] SettingsModalRoot built successfully in current scene!");
         }
 
+        [MenuItem("Cometa Champions/Build Deck Warning Modal In Current Scene")]
+        public static void BuildDeckWarningModalInCurrentScene()
+        {
+            var home = Object.FindAnyObjectByType<Home>();
+            if (home == null)
+            {
+                Debug.LogError("[HomeSceneBuilder] No Home component found in current scene!");
+                return;
+            }
+
+            var canvas = home.GetComponent<Canvas>() ?? home.GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                Debug.LogError("[HomeSceneBuilder] No Canvas found for Home component!");
+                return;
+            }
+
+            var so = new SerializedObject(home);
+
+            var existingModal = canvas.transform.Find("DeckWarningModalRoot");
+            if (existingModal != null)
+            {
+                Undo.DestroyObjectImmediate(existingModal.gameObject);
+            }
+
+            BuildDeckWarningModal(canvas.transform, so);
+            so.ApplyModifiedProperties();
+            EditorSceneManager.MarkSceneDirty(home.gameObject.scene);
+            Debug.Log("[HomeSceneBuilder] DeckWarningModalRoot built successfully in current scene!");
+        }
+
         [MenuItem("Cometa Champions/Build Home Scene")]
         public static void BuildHomeScene()
         {
@@ -799,6 +830,9 @@ namespace CometaChampions.Editor
 
             // 9. Settings Modal (Audio Controls: SFX & Music ON/OFF Buttons)
             BuildSettingsModal(canvasObj.transform, so);
+
+            // 10. Deck Warning Modal (Rule 7: Incomplete Deck Notice)
+            BuildDeckWarningModal(canvasObj.transform, so);
 
             so.ApplyModifiedProperties();
 
@@ -2208,6 +2242,89 @@ namespace CometaChampions.Editor
                 closeTMP.color = Color.white;
             }
             so.FindProperty("closeSettingsButton").objectReferenceValue = closeBtn;
+
+            modalRoot.SetActive(false);
+        }
+
+        private static void BuildDeckWarningModal(Transform canvasTransform, SerializedObject so)
+        {
+            // 1. Root Overlay (dimmed backdrop)
+            var modalRoot = CreateUIElement("DeckWarningModalRoot", canvasTransform);
+            SetStretch(modalRoot.GetComponent<RectTransform>());
+            var overlayImg = modalRoot.AddComponent<Image>();
+            overlayImg.color = new Color(0.02f, 0.03f, 0.06f, 0.86f);
+            so.FindProperty("deckWarningModalRoot").objectReferenceValue = modalRoot;
+
+            // 2. Warning Dialog Window
+            var dialogObj = CreateUIElement("WarningDialog", modalRoot.transform);
+            var dialogRect = dialogObj.GetComponent<RectTransform>();
+            dialogRect.anchorMin = new Vector2(0.5f, 0.5f);
+            dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
+            dialogRect.pivot = new Vector2(0.5f, 0.5f);
+            dialogRect.anchoredPosition = Vector2.zero;
+            dialogRect.sizeDelta = new Vector2(680, 430);
+
+            var dialogImg = dialogObj.AddComponent<Image>();
+            dialogImg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
+
+            // 3. Title
+            var titleTMP = CreateTMPText("Title", dialogObj.transform, "¡NO HAY SUFICIENTES CARTAS EN EL MAZO!", new Vector2(0, -22), new Vector2(-40, 42), 23, TextAlignmentOptions.Center);
+            var titleRt = titleTMP.GetComponent<RectTransform>();
+            titleRt.anchorMin = new Vector2(0f, 1f);
+            titleRt.anchorMax = new Vector2(1f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleTMP.fontStyle = FontStyles.Bold;
+            titleTMP.color = new Color(1f, 0.84f, 0.25f);
+            so.FindProperty("deckWarningTitleText").objectReferenceValue = titleTMP;
+
+            // 4. Body
+            var bodyObj = CreateUIElement("Body", dialogObj.transform);
+            var bodyRt = bodyObj.GetComponent<RectTransform>();
+            bodyRt.anchorMin = new Vector2(0f, 0f);
+            bodyRt.anchorMax = new Vector2(1f, 1f);
+            bodyRt.offsetMin = new Vector2(36f, 95f);
+            bodyRt.offsetMax = new Vector2(-36f, -75f);
+            var bodyTMP = bodyObj.AddComponent<TextMeshProUGUI>();
+            bodyTMP.text = "Para poder iniciar un combate se requiere tener 12 cartas en el mazo.";
+            bodyTMP.fontSize = 16.5f;
+            bodyTMP.alignment = TextAlignmentOptions.TopLeft;
+            bodyTMP.textWrappingMode = TextWrappingModes.Normal;
+            bodyTMP.color = new Color(0.90f, 0.93f, 0.98f);
+            so.FindProperty("deckWarningBodyText").objectReferenceValue = bodyTMP;
+
+            // 5. Button 1: IR AL MAZO
+            var goDeckBtn = CreateButton("GoToDeckButton", dialogObj.transform, "IR AL MAZO", new Vector2(-135, 24), new Vector2(230, 48));
+            var goDeckRt = goDeckBtn.GetComponent<RectTransform>();
+            goDeckRt.anchorMin = new Vector2(0.5f, 0f);
+            goDeckRt.anchorMax = new Vector2(0.5f, 0f);
+            goDeckRt.pivot = new Vector2(0.5f, 0f);
+            var goDeckImg = goDeckBtn.GetComponent<Image>();
+            goDeckImg.color = new Color(0.18f, 0.55f, 0.85f, 0.98f);
+            var goDeckTMP = goDeckBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (goDeckTMP != null)
+            {
+                goDeckTMP.fontSize = 16f;
+                goDeckTMP.fontStyle = FontStyles.Bold;
+                goDeckTMP.color = Color.white;
+            }
+            so.FindProperty("deckWarningGoToDeckButton").objectReferenceValue = goDeckBtn;
+
+            // 6. Button 2: ENTENDIDO
+            var closeBtn = CreateButton("CloseWarningButton", dialogObj.transform, "ENTENDIDO", new Vector2(135, 24), new Vector2(230, 48));
+            var closeRt = closeBtn.GetComponent<RectTransform>();
+            closeRt.anchorMin = new Vector2(0.5f, 0f);
+            closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            var closeImg = closeBtn.GetComponent<Image>();
+            closeImg.color = new Color(0.22f, 0.70f, 0.35f, 0.98f);
+            var closeTMP = closeBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (closeTMP != null)
+            {
+                closeTMP.fontSize = 16f;
+                closeTMP.fontStyle = FontStyles.Bold;
+                closeTMP.color = Color.white;
+            }
+            so.FindProperty("deckWarningCloseButton").objectReferenceValue = closeBtn;
 
             modalRoot.SetActive(false);
         }

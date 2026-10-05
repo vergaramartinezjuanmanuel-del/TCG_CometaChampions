@@ -158,6 +158,13 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private TextMeshProUGUI? sfxToggleLabel;
         [SerializeField] private TextMeshProUGUI? musicToggleLabel;
 
+        [Header("Deck Warning Modal")]
+        [SerializeField] private GameObject deckWarningModalRoot;
+        [SerializeField] private TextMeshProUGUI deckWarningTitleText;
+        [SerializeField] private TextMeshProUGUI deckWarningBodyText;
+        [SerializeField] private Button deckWarningGoToDeckButton;
+        [SerializeField] private Button deckWarningCloseButton;
+
         // Card Viewport VFX (Rotating Vortex & Aura Particles)
         private Transform cardViewportTransform;
         private GameObject cardVfxAnchor;
@@ -438,6 +445,7 @@ namespace CometaChampions.Runtime.UI
             SetupClanDropdown();
             Setup3DControls();
             SetupSettingsPanel();
+            SetupDeckWarningModal();
             SelectCategory(CardCategory.Champion);
             UpdateDeckUI();
 
@@ -642,10 +650,6 @@ namespace CometaChampions.Runtime.UI
             }
         }
 
-        private GameObject deckWarningModalRoot;
-        private TextMeshProUGUI deckWarningTitleText;
-        private TextMeshProUGUI deckWarningBodyText;
-
         public SavedDeckData GetActiveCombatDeck()
         {
             if (Profile == null) return null;
@@ -837,9 +841,81 @@ namespace CometaChampions.Runtime.UI
             ShowDeckNoticeModal("¡NO HAY SUFICIENTES CARTAS EN EL MAZO!", message);
         }
 
+        public void SetupDeckWarningModal()
+        {
+            // 1. Locate DeckWarningModalRoot in Canvas hierarchy if not already assigned
+            if (deckWarningModalRoot == null)
+            {
+                var rootTrans = transform.Find("DeckWarningModalRoot");
+                if (rootTrans != null)
+                {
+                    deckWarningModalRoot = rootTrans.gameObject;
+                }
+            }
+
+            // 2. Resolve child controls from DeckWarningModalRoot if fields are null
+            if (deckWarningModalRoot != null)
+            {
+                if (deckWarningTitleText == null)
+                {
+                    var titleTrans = deckWarningModalRoot.transform.Find("WarningDialog/Title");
+                    if (titleTrans != null) deckWarningTitleText = titleTrans.GetComponent<TextMeshProUGUI>();
+                }
+
+                if (deckWarningBodyText == null)
+                {
+                    var bodyTrans = deckWarningModalRoot.transform.Find("WarningDialog/Body");
+                    if (bodyTrans != null) deckWarningBodyText = bodyTrans.GetComponent<TextMeshProUGUI>();
+                }
+
+                if (deckWarningGoToDeckButton == null)
+                {
+                    var goDeckTrans = deckWarningModalRoot.transform.Find("WarningDialog/GoToDeckButton");
+                    if (goDeckTrans != null) deckWarningGoToDeckButton = goDeckTrans.GetComponent<Button>();
+                }
+
+                if (deckWarningCloseButton == null)
+                {
+                    var closeTrans = deckWarningModalRoot.transform.Find("WarningDialog/CloseWarningButton");
+                    if (closeTrans != null) deckWarningCloseButton = closeTrans.GetComponent<Button>();
+                }
+            }
+
+            // 3. Wire Click Listeners
+            if (deckWarningGoToDeckButton != null)
+            {
+                deckWarningGoToDeckButton.onClick.RemoveAllListeners();
+                deckWarningGoToDeckButton.onClick.AddListener(() =>
+                {
+                    HideDeckWarningModal();
+                    OnDeckButtonClicked();
+                });
+            }
+
+            if (deckWarningCloseButton != null)
+            {
+                deckWarningCloseButton.onClick.RemoveAllListeners();
+                deckWarningCloseButton.onClick.AddListener(HideDeckWarningModal);
+            }
+
+            if (deckWarningModalRoot != null)
+            {
+                deckWarningModalRoot.SetActive(false);
+            }
+        }
+
         private void ShowDeckNoticeModal(string title, string bodyMessage)
         {
-            EnsureDeckWarningModalCreated();
+            if (deckWarningModalRoot == null)
+            {
+                SetupDeckWarningModal();
+            }
+
+            if (deckWarningModalRoot == null)
+            {
+                EnsureDeckWarningModalCreated();
+            }
+
             if (deckWarningModalRoot == null) return;
 
             if (deckWarningTitleText != null) deckWarningTitleText.text = title;
@@ -926,8 +1002,8 @@ namespace CometaChampions.Runtime.UI
 
             var goDeckBg = goDeckBtnObj.AddComponent<Image>();
             goDeckBg.color = new Color(0.18f, 0.55f, 0.85f, 0.98f);
-            var goDeckBtn = goDeckBtnObj.AddComponent<Button>();
-            goDeckBtn.onClick.AddListener(() =>
+            deckWarningGoToDeckButton = goDeckBtnObj.AddComponent<Button>();
+            deckWarningGoToDeckButton.onClick.AddListener(() =>
             {
                 HideDeckWarningModal();
                 OnDeckButtonClicked();
@@ -958,8 +1034,8 @@ namespace CometaChampions.Runtime.UI
 
             var closeBg = closeBtnObj.AddComponent<Image>();
             closeBg.color = new Color(0.22f, 0.70f, 0.35f, 0.98f);
-            var closeBtn = closeBtnObj.AddComponent<Button>();
-            closeBtn.onClick.AddListener(HideDeckWarningModal);
+            deckWarningCloseButton = closeBtnObj.AddComponent<Button>();
+            deckWarningCloseButton.onClick.AddListener(HideDeckWarningModal);
 
             var closeLblObj = new GameObject("Label", typeof(RectTransform));
             closeLblObj.transform.SetParent(closeBtnObj.transform, false);
