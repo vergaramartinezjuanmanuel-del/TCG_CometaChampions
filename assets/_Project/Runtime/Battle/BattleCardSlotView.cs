@@ -158,12 +158,12 @@ namespace CometaChampions.Runtime.Battle
                     }
                 }
 
-                if (slotFrame != null)
-                {
-                    slotFrame.color = canUndo
-                        ? new Color(0.3f, 0.85f, 1f, 0.9f) // Bright cyan tint if undoable
-                        : new Color(1f, 1f, 1f, 0.45f);
-                }
+                // if (slotFrame != null)
+                // {
+                //     slotFrame.color = canUndo
+                //         ? new Color(0.3f, 0.85f, 1f, 0.9f) // Bright cyan tint if undoable
+                //         : new Color(1f, 1f, 1f, 0.45f);
+                // }
 
                 if (powerBadgeRoot != null)
                 {

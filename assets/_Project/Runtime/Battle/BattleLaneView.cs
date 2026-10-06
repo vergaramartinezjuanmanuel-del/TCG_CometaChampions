@@ -190,8 +190,8 @@ namespace CometaChampions.Runtime.Battle
                     if (deployButtonImage != null)
                     {
                         deployButtonImage.color = isAffordable
-                            ? new Color(0.12f, 0.65f, 0.35f) // Emerald green
-                            : new Color(0.55f, 0.20f, 0.20f); // Muted warning red
+                            ? new Color(0f, 1f, 0.4f) // Emerald green
+                            : new Color(1f, 0f, 0f); // Muted warning red
                     }
                 }
                 else

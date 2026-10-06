@@ -1301,8 +1301,8 @@ namespace CometaChampions.Runtime.UI
                 {
                     craftCardButton.gameObject.SetActive(true);
                     craftCardButton.interactable = canAffordCraft;
-                    var rt = craftCardButton.GetComponent<RectTransform>();
-                    if (rt != null) rt.anchoredPosition = new Vector2(205, -630);
+                    // var rt = craftCardButton.GetComponent<RectTransform>();
+                    // if (rt != null) rt.anchoredPosition = new Vector2(205, -630);
                 }
 
                 if (craftCardButtonText != null)
