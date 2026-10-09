@@ -34,6 +34,63 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private Transform revealItemsContainer;
         [SerializeField] private Button revealCloseButton;
 
+        [Header("Reward Reveal Sprites (_Project/Art/Home)")]
+        [SerializeField] private Sprite goldIcon;
+        [SerializeField] private Sprite esenciaIcon;
+        [SerializeField] private Sprite sobreIcon;
+        [SerializeField] private Sprite xpIcon;
+        [SerializeField] private Sprite botonGrisSprite;
+
+        public Sprite GetGoldIcon()
+        {
+            if (goldIcon != null) return goldIcon;
+#if UNITY_EDITOR
+            goldIcon = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/gold.png");
+            if (goldIcon != null) return goldIcon;
+#endif
+            return Resources.Load<Sprite>("Home/gold");
+        }
+
+        public Sprite GetEsenciaIcon()
+        {
+            if (esenciaIcon != null) return esenciaIcon;
+#if UNITY_EDITOR
+            esenciaIcon = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/esencia.png");
+            if (esenciaIcon != null) return esenciaIcon;
+#endif
+            return Resources.Load<Sprite>("Home/esencia");
+        }
+
+        public Sprite GetSobreIcon()
+        {
+            if (sobreIcon != null) return sobreIcon;
+#if UNITY_EDITOR
+            sobreIcon = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/sobre_new.png");
+            if (sobreIcon != null) return sobreIcon;
+#endif
+            return Resources.Load<Sprite>("Home/sobre_new");
+        }
+
+        public Sprite GetXpIcon()
+        {
+            if (xpIcon != null) return xpIcon;
+#if UNITY_EDITOR
+            xpIcon = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/xp.png");
+            if (xpIcon != null) return xpIcon;
+#endif
+            return Resources.Load<Sprite>("Home/xp");
+        }
+
+        public Sprite GetBotonGrisSprite()
+        {
+            if (botonGrisSprite != null) return botonGrisSprite;
+#if UNITY_EDITOR
+            botonGrisSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/boton-rectangular-gris.png");
+            if (botonGrisSprite != null) return botonGrisSprite;
+#endif
+            return Resources.Load<Sprite>("Home/boton-rectangular-gris");
+        }
+
         public event Action<DailyRewardResult> OnDailyRewardClaimed;
 
         private readonly List<GameObject> spawnedDayCards = new();
@@ -61,6 +118,14 @@ namespace CometaChampions.Runtime.UI
             {
                 revealCloseButton.onClick.RemoveAllListeners();
                 revealCloseButton.onClick.AddListener(CloseRevealDialog);
+
+                var btnImg = revealCloseButton.GetComponent<Image>();
+                var gris = GetBotonGrisSprite();
+                if (btnImg != null && gris != null)
+                {
+                    btnImg.sprite = gris;
+                    btnImg.color = Color.white;
+                }
             }
 
             if (revealDialogRoot != null)
@@ -484,6 +549,17 @@ namespace CometaChampions.Runtime.UI
                 revealDialogRoot.SetActive(true);
             }
 
+            if (revealCloseButton != null)
+            {
+                var btnImg = revealCloseButton.GetComponent<Image>();
+                var gris = GetBotonGrisSprite();
+                if (btnImg != null && gris != null)
+                {
+                    btnImg.sprite = gris;
+                    btnImg.color = Color.white;
+                }
+            }
+
             if (revealTitleText != null)
             {
                 revealTitleText.text = $"¡PACK DÍA {result.DayIndex} RECLAMADO!";
@@ -496,7 +572,7 @@ namespace CometaChampions.Runtime.UI
 
             if (revealItemsContainer == null) return;
 
-            // 1. Cards Awarded (with real thumbnails!)
+            // 1. Cards Awarded (assembled dynamically with official frame, stats & illustrations)
             foreach (var cardId in result.AwardedCardIds)
             {
                 var cardDef = CardCatalog.GetCardById(cardId);
@@ -519,82 +595,47 @@ namespace CometaChampions.Runtime.UI
             }
             else if (result.AvatarConvertedToGold)
             {
-                var bonusObj = CreateRevealResourceItem("<color=#FFD700>ORO</color>", "+300 Oro (Avatar Duplicado)", "Compensación", revealItemsContainer);
+                var bonusObj = CreateRevealResourceItem(GetGoldIcon(), "+300 Oro (Avatar Duplicado)", "Compensación", revealItemsContainer);
                 spawnedRevealItems.Add(bonusObj);
             }
 
             // 3. Gold Coins
             if (result.GoldCoins > 0)
             {
-                var goldObj = CreateRevealResourceItem("<color=#FFD700>ORO</color>", $"+{result.GoldCoins:N0} Monedas", "Oro para mejoras", revealItemsContainer);
+                var goldObj = CreateRevealResourceItem(GetGoldIcon(), $"+{result.GoldCoins:N0} Monedas", "Oro para mejoras", revealItemsContainer);
                 spawnedRevealItems.Add(goldObj);
             }
 
             // 4. Esencia Cometa
             if (result.EsenciaCometa > 0)
             {
-                var dustObj = CreateRevealResourceItem("<color=#00E5FF>ESENCIA</color>", $"+{result.EsenciaCometa} Esencia", "Polvo de crafteo", revealItemsContainer);
+                var dustObj = CreateRevealResourceItem(GetEsenciaIcon(), $"+{result.EsenciaCometa} Esencia", "Polvo de crafteo", revealItemsContainer);
                 spawnedRevealItems.Add(dustObj);
             }
 
             // 5. Booster Packs
             if (result.BoosterPacks > 0)
             {
-                var packObj = CreateRevealResourceItem("<color=#FF9F0A>SOBRE</color>", $"+{result.BoosterPacks} Sobre", "Pack de refuerzo", revealItemsContainer);
+                var packObj = CreateRevealResourceItem(GetSobreIcon(), $"+{result.BoosterPacks} Sobre", "Pack de refuerzo", revealItemsContainer);
                 spawnedRevealItems.Add(packObj);
             }
 
             // 6. Account XP
             if (result.AccountXp > 0)
             {
-                var xpObj = CreateRevealResourceItem("<color=#30D158>XP</color>", $"+{result.AccountXp} XP", "Progreso de cuenta", revealItemsContainer);
+                var xpObj = CreateRevealResourceItem(GetXpIcon(), $"+{result.AccountXp} XP", "Progreso de cuenta", revealItemsContainer);
                 spawnedRevealItems.Add(xpObj);
             }
         }
 
         private GameObject CreateRevealCardItem(CardDefinition card, Transform parent)
         {
-            var itemObj = new GameObject($"RevealCard_{card.Id}");
+            var itemObj = new GameObject($"RevealCard_{card.Id}", typeof(RectTransform));
             itemObj.transform.SetParent(parent, false);
-            var rect = itemObj.AddComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(110, 160);
+            var rect = itemObj.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(120, 168);
 
-            var bgImg = itemObj.AddComponent<Image>();
-            bgImg.color = new Color(0.12f, 0.14f, 0.20f, 0.98f);
-
-            // Thumbnail
-            var thumbObj = new GameObject("Thumbnail");
-            thumbObj.transform.SetParent(itemObj.transform, false);
-            var tRect = thumbObj.AddComponent<RectTransform>();
-            tRect.anchorMin = new Vector2(0.5f, 1);
-            tRect.anchorMax = new Vector2(0.5f, 1);
-            tRect.pivot = new Vector2(0.5f, 1);
-            tRect.anchoredPosition = new Vector2(0, -6);
-            tRect.sizeDelta = new Vector2(98, 115);
-
-            var thumbImg = thumbObj.AddComponent<Image>();
-            var sprite = Card3D.GetCardThumbnail(card);
-            if (sprite != null)
-            {
-                thumbImg.sprite = sprite;
-                thumbImg.preserveAspect = true;
-            }
-
-            // Name
-            var nameObj = new GameObject("CardName");
-            nameObj.transform.SetParent(itemObj.transform, false);
-            var nRect = nameObj.AddComponent<RectTransform>();
-            nRect.anchorMin = new Vector2(0.5f, 0);
-            nRect.anchorMax = new Vector2(0.5f, 0);
-            nRect.pivot = new Vector2(0.5f, 0);
-            nRect.anchoredPosition = new Vector2(0, 4);
-            nRect.sizeDelta = new Vector2(105, 32);
-
-            var nTMP = nameObj.AddComponent<TextMeshProUGUI>();
-            nTMP.text = $"<color=#FFD700>{card.Name}</color>\n<size=10>{card.Clan}</size>";
-            nTMP.fontSize = 11;
-            nTMP.fontStyle = FontStyles.Bold;
-            nTMP.alignment = TextAlignmentOptions.Center;
+            DynamicCardAssembler.AssembleCard(card, rect, 120, 168, false);
 
             return itemObj;
         }
@@ -657,34 +698,36 @@ namespace CometaChampions.Runtime.UI
             return itemObj;
         }
 
-        private GameObject CreateRevealResourceItem(string icon, string mainText, string subText, Transform parent)
+        private GameObject CreateRevealResourceItem(Sprite iconSprite, string mainText, string subText, Transform parent)
         {
-            var itemObj = new GameObject($"RevealRes_{mainText}");
+            var itemObj = new GameObject($"RevealRes_{mainText}", typeof(RectTransform));
             itemObj.transform.SetParent(parent, false);
-            var rect = itemObj.AddComponent<RectTransform>();
+            var rect = itemObj.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(110, 160);
 
             var bgImg = itemObj.AddComponent<Image>();
             bgImg.color = new Color(0.12f, 0.13f, 0.18f, 0.95f);
 
-            var iconObj = new GameObject("Icon");
+            var iconObj = new GameObject("Icon", typeof(RectTransform));
             iconObj.transform.SetParent(itemObj.transform, false);
-            var iRect = iconObj.AddComponent<RectTransform>();
+            var iRect = iconObj.GetComponent<RectTransform>();
             iRect.anchorMin = new Vector2(0.5f, 1);
             iRect.anchorMax = new Vector2(0.5f, 1);
             iRect.pivot = new Vector2(0.5f, 1);
-            iRect.anchoredPosition = new Vector2(0, -18);
-            iRect.sizeDelta = new Vector2(70, 70);
+            iRect.anchoredPosition = new Vector2(0, -14);
+            iRect.sizeDelta = new Vector2(72, 72);
 
-            var iTMP = iconObj.AddComponent<TextMeshProUGUI>();
-            iTMP.text = icon;
-            iTMP.fontSize = 16;
-            iTMP.fontStyle = FontStyles.Bold;
-            iTMP.alignment = TextAlignmentOptions.Center;
+            if (iconSprite != null)
+            {
+                var iImg = iconObj.AddComponent<Image>();
+                iImg.sprite = iconSprite;
+                iImg.preserveAspect = true;
+                iImg.color = Color.white;
+            }
 
-            var textObj = new GameObject("Text");
+            var textObj = new GameObject("Text", typeof(RectTransform));
             textObj.transform.SetParent(itemObj.transform, false);
-            var tRect = textObj.AddComponent<RectTransform>();
+            var tRect = textObj.GetComponent<RectTransform>();
             tRect.anchorMin = new Vector2(0.5f, 0);
             tRect.anchorMax = new Vector2(0.5f, 0);
             tRect.pivot = new Vector2(0.5f, 0);

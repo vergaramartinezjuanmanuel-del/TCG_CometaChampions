@@ -6193,6 +6193,11 @@ MonoBehaviour:
   revealSubtitleText: {fileID: 668669538}
   revealItemsContainer: {fileID: 733256490}
   revealCloseButton: {fileID: 715627911}
+  goldIcon: {fileID: -6301429047446442448, guid: 55799b081be0d499f96dbf2ce4422ff4, type: 3}
+  esenciaIcon: {fileID: -4477503273752039900, guid: a9c0790f11fe44eb492299bd62f3189c, type: 3}
+  sobreIcon: {fileID: 7183909886651783620, guid: fafef4d0fe0234dc6ba70792e9680d54, type: 3}
+  xpIcon: {fileID: -5511982322241440918, guid: 169a99ddeaf7d4161ab471e051bc3c25, type: 3}
+  botonGrisSprite: {fileID: -7314449463533284968, guid: 9ddca90c37bde4c5f9c022149edb7904, type: 3}
 --- !u!224 &421088478
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10464,7 +10469,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -743557935725499288, guid: 3935cb180fc864e18830533a0f019776, type: 3}
+  m_Sprite: {fileID: -7314449463533284968, guid: 9ddca90c37bde4c5f9c022149edb7904, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

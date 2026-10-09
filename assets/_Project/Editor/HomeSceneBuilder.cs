@@ -1647,7 +1647,16 @@ namespace CometaChampions.Editor
             rcbRect.anchorMax = new Vector2(0.5f, 0);
             rcbRect.pivot = new Vector2(0.5f, 0);
             var rcbImg = revCloseBtn.GetComponent<Image>();
-            rcbImg.color = new Color(0.20f, 0.75f, 0.35f);
+            var grisBtnSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/boton-rectangular-gris.png");
+            if (grisBtnSprite != null)
+            {
+                rcbImg.sprite = grisBtnSprite;
+                rcbImg.color = Color.white;
+            }
+            else
+            {
+                rcbImg.color = new Color(0.20f, 0.75f, 0.35f);
+            }
             var rcbTMP = revCloseBtn.GetComponentInChildren<TextMeshProUGUI>();
             if (rcbTMP != null)
             {
@@ -1656,6 +1665,13 @@ namespace CometaChampions.Editor
                 rcbTMP.color = Color.white;
             }
             modalSo.FindProperty("revealCloseButton").objectReferenceValue = revCloseBtn;
+
+            // Sprites for reward reveal dialog
+            modalSo.FindProperty("goldIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/gold.png");
+            modalSo.FindProperty("esenciaIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/esencia.png");
+            modalSo.FindProperty("sobreIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/sobre_new.png");
+            modalSo.FindProperty("xpIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Home/xp.png");
+            modalSo.FindProperty("botonGrisSprite").objectReferenceValue = grisBtnSprite;
 
             revealObj.SetActive(false); // Initially hidden
 
