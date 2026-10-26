@@ -100,6 +100,9 @@ namespace CometaChampions.Runtime.UI
         [SerializeField] private GameObject cardGridItemPrefab;
         [SerializeField] private TextMeshProUGUI gridHeaderTitle;
 
+        [Header("Game Version Display")]
+        [SerializeField] private TextMeshProUGUI? gameVersionText;
+
         [Header("Right Panel: Card Details")]
         [SerializeField] private TextMeshProUGUI cardNameText;
         [SerializeField] private TextMeshProUGUI cardLevelText;
@@ -446,6 +449,7 @@ namespace CometaChampions.Runtime.UI
             Setup3DControls();
             SetupSettingsPanel();
             SetupDeckWarningModal();
+            EnsureVersionDisplay();
             SelectCategory(CardCategory.Champion);
             UpdateDeckUI();
 
@@ -699,7 +703,7 @@ namespace CometaChampions.Runtime.UI
                         if (copiesInDeck == 0)
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = "+ AÑADIR AL MAZO (0/2)";
+                                toggleDeckCardButtonText.text = "AÑADIR AL MAZO (0/2)";
                             toggleDeckCardButton.interactable = count < DeckValidator.ArenaRequiredDeckSize;
                         }
                         else if (copiesInDeck == 1)
@@ -707,15 +711,15 @@ namespace CometaChampions.Runtime.UI
                             if (toggleDeckCardButtonText != null)
                             {
                                 toggleDeckCardButtonText.text = count < DeckValidator.ArenaRequiredDeckSize
-                                    ? $"+ DUPLICADA: {DeckValidator.DuplicateCardDeckGoldCost} ORO (1/2)"
-                                    : "- QUITAR COPIA (1/2)";
+                                    ? $"DUPLICADA: {DeckValidator.DuplicateCardDeckGoldCost} ORO (1/2)"
+                                    : "QUITAR COPIA (1/2)";
                             }
                             toggleDeckCardButton.interactable = true;
                         }
                         else
                         {
                             if (toggleDeckCardButtonText != null)
-                                toggleDeckCardButtonText.text = "- QUITAR DEL MAZO (2/2)";
+                                toggleDeckCardButtonText.text = "QUITAR DEL MAZO (2/2)";
                             toggleDeckCardButton.interactable = true;
                         }
                     }
@@ -901,6 +905,56 @@ namespace CometaChampions.Runtime.UI
             if (deckWarningModalRoot != null)
             {
                 deckWarningModalRoot.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// Ensures the game version watermark text exists in the bottom-left corner of the Home screen Canvas,
+        /// strictly formatted as: "v" + Version + "." + Bundle Version Code (e.g., "v1.0.0.2").
+        /// </summary>
+        public void EnsureVersionDisplay()
+        {
+            if (gameVersionText == null)
+            {
+                var existing = transform.Find("GameVersionText");
+                if (existing != null)
+                {
+                    gameVersionText = existing.GetComponent<TextMeshProUGUI>();
+                }
+            }
+
+            if (gameVersionText == null)
+            {
+                var versionObj = new GameObject("GameVersionText", typeof(RectTransform));
+                versionObj.transform.SetParent(transform, false);
+
+                var rt = versionObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0f, 0f);
+                rt.anchorMax = new Vector2(0f, 0f);
+                rt.pivot = new Vector2(0f, 0f);
+                rt.anchoredPosition = new Vector2(24f, 14f);
+                rt.sizeDelta = new Vector2(220f, 28f);
+
+                gameVersionText = versionObj.AddComponent<TextMeshProUGUI>();
+                var font = DynamicCardAssembler.GetCardFont();
+                if (font != null) gameVersionText.font = font;
+                gameVersionText.fontSize = 14f;
+                gameVersionText.fontStyle = FontStyles.Normal;
+                gameVersionText.color = new Color(0.75f, 0.78f, 0.85f, 0.60f);
+                gameVersionText.alignment = TextAlignmentOptions.BottomLeft;
+                gameVersionText.raycastTarget = false;
+
+                // Position behind modal overlays but above basic backgrounds
+                var leftPanel = transform.Find("LeftPanel_Cards");
+                if (leftPanel != null)
+                {
+                    versionObj.transform.SetSiblingIndex(leftPanel.GetSiblingIndex() + 1);
+                }
+            }
+
+            if (gameVersionText != null)
+            {
+                gameVersionText.text = GameVersionService.GetFormattedVersion();
             }
         }
 
@@ -1245,9 +1299,13 @@ namespace CometaChampions.Runtime.UI
 
             if (loreText != null)
             {
-                loreText.text = !string.IsNullOrEmpty(card.LoreText)
-                    ? $"<b>Texto de Lore:</b> {card.LoreText}"
-                    : string.Empty;
+                var showcaseData = DynamicCardAssembler.ResolveShowcaseCardData(card);
+                string description = DynamicCardAssembler.GetDescriptionText(showcaseData);
+                if (string.IsNullOrWhiteSpace(description))
+                {
+                    description = card.LoreText;
+                }
+                loreText.text = description;
             }
 
             if (activeAbilityText != null)
@@ -1307,7 +1365,7 @@ namespace CometaChampions.Runtime.UI
 
                 if (craftCardButtonText != null)
                 {
-                    craftCardButtonText.text = $"+ CRAFTEAR CARTA ({craftCost} ESENCIA)";
+                    craftCardButtonText.text = $"CRAFTEAR CARTA ({craftCost} ESENCIA)";
                 }
             }
             else
@@ -1349,7 +1407,7 @@ namespace CometaChampions.Runtime.UI
 
                         if (craftCardButtonText != null)
                         {
-                            craftCardButtonText.text = $"+ CREAR COPIA (+1 COPIA • {craftCost} ESENCIA)";
+                            craftCardButtonText.text = $"CREAR COPIA (1 COPIA • {craftCost} ESENCIA)";
                         }
                     }
                     else
@@ -1681,15 +1739,17 @@ namespace CometaChampions.Runtime.UI
         private void SetReversoBtnHighlight(Button btn, bool active)
         {
             if (btn == null) return;
+            float alpha = active ? 1f : 0.55f;
             var img = btn.GetComponent<Image>();
             if (img != null)
             {
-                img.color = active ? new Color(0.95f, 0.75f, 0.2f, 1f) : new Color(0.18f, 0.2f, 0.28f, 0.85f);
+                img.color = new Color(1f, 1f, 1f, alpha);
             }
             var txt = btn.GetComponentInChildren<TextMeshProUGUI>();
             if (txt != null)
             {
-                txt.color = active ? Color.black : Color.white;
+                var c = txt.color;
+                txt.color = new Color(c.r, c.g, c.b, alpha);
             }
         }
 
@@ -2068,6 +2128,7 @@ namespace CometaChampions.Runtime.UI
                 pedestalSparksPs = sparksObj.AddComponent<ParticleSystem>();
             }
             ConfigurePedestalSparksParticles(pedestalSparksPs, mat);
+            AdaptiveQualityManager.Instance.ApplySceneBudgetsNow();
         }
 
         private static void ConfigureVortexSwirlParticles(ParticleSystem ps, Material mat)

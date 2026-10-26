@@ -17,7 +17,8 @@ namespace CometaChampions.Tests
                 typeof(ArenaBattleEngineTests),
                 typeof(ClanAdvantageTests),
                 typeof(TurnStateMachineTests),
-                typeof(PlayerProfileTests)
+                typeof(PlayerProfileTests),
+                typeof(AdaptiveQualitySystemTests)
             };
 
             int total = 0;

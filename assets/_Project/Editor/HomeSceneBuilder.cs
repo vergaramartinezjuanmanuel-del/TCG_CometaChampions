@@ -577,6 +577,16 @@ namespace CometaChampions.Editor
             var itemPrefab = BuildCardGridItemPrefab();
             so.FindProperty("cardGridItemPrefab").objectReferenceValue = itemPrefab;
 
+            // Game Version Label in Bottom-Left Corner
+            var versionTMP = CreateTMPText("GameVersionText", canvasObj.transform, GameVersionService.GetFormattedVersion(), new Vector2(24f, 14f), new Vector2(220f, 28f), 14f, TextAlignmentOptions.BottomLeft);
+            var vRt = versionTMP.GetComponent<RectTransform>();
+            vRt.anchorMin = new Vector2(0f, 0f);
+            vRt.anchorMax = new Vector2(0f, 0f);
+            vRt.pivot = new Vector2(0f, 0f);
+            versionTMP.color = new Color(0.75f, 0.78f, 0.85f, 0.60f);
+            versionTMP.raycastTarget = false;
+            so.FindProperty("gameVersionText").objectReferenceValue = versionTMP;
+
             // Center Viewport: 3D Card Anchor & 360 Viewer
             var centerAnchor = new GameObject("Center_Card3D_Viewport");
             centerAnchor.transform.position = new Vector3(0.18f, 0.15f, -4.5f);
@@ -785,7 +795,7 @@ namespace CometaChampions.Editor
             so.FindProperty("upgradeCostText").objectReferenceValue = costLabel;
 
             // Toggle In Deck Button (Card Details)
-            var deckToggleBtn = CreateButton("ToggleDeckBtn", rightPanel.transform, "+ AÑADIR AL MAZO (0/2)", new Vector2(205, -705), new Vector2(380, 52));
+            var deckToggleBtn = CreateButton("ToggleDeckBtn", rightPanel.transform, "AÑADIR AL MAZO (0/2)", new Vector2(205, -705), new Vector2(380, 52));
             var dtImg = deckToggleBtn.GetComponent<Image>();
             dtImg.color = new Color(0.18f, 0.45f, 0.75f);
             var dtTMP = deckToggleBtn.GetComponentInChildren<TextMeshProUGUI>();
@@ -799,7 +809,7 @@ namespace CometaChampions.Editor
             so.FindProperty("toggleDeckCardButtonText").objectReferenceValue = dtTMP;
 
             // Craft Card Button (Option A - Esencia Cometa)
-            var craftBtn = CreateButton("CraftCardBtn", rightPanel.transform, "+ CRAFTEAR CARTA (100 ESENCIA)", new Vector2(205, -770), new Vector2(380, 50));
+            var craftBtn = CreateButton("CraftCardBtn", rightPanel.transform, "CRAFTEAR CARTA (100 ESENCIA)", new Vector2(205, -770), new Vector2(380, 50));
             var cbImg = craftBtn.GetComponent<Image>();
             cbImg.color = new Color(0.35f, 0.15f, 0.55f); // Deep arcane amethyst
             var cbTMP = craftBtn.GetComponentInChildren<TextMeshProUGUI>();

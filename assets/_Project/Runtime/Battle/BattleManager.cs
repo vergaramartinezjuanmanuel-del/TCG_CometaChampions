@@ -364,6 +364,7 @@ namespace CometaChampions.Runtime.Battle
         private IEnumerator ResolveTurnSequenceCoroutine()
         {
             isResolvingTurn = true;
+            AdaptiveQualityManager.Instance.SetCriticalAnimationActive(true);
             if (headerView != null)
             {
                 headerView.SetEndTurnInteractable(false);
@@ -412,6 +413,7 @@ namespace CometaChampions.Runtime.Battle
             }
 
             isResolvingTurn = false;
+            AdaptiveQualityManager.Instance.SetCriticalAnimationActive(false);
 
             if (MatchState.IsGameOver)
             {

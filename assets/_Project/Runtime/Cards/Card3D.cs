@@ -39,6 +39,9 @@ namespace CometaChampions.Runtime.Cards
 
         private static readonly Dictionary<string, Texture2D> TextureCache = new(StringComparer.OrdinalIgnoreCase);
 
+        public static int CachedTextureCount => TextureCache.Count;
+        public static int CachedSpriteCount => SpriteCache.Count;
+
         public ShowcaseCardData CurrentCardData { get; private set; }
         public ShowcaseReversoData CurrentReversoData { get; private set; }
         public int FoilLevel => currentFoilLevel;

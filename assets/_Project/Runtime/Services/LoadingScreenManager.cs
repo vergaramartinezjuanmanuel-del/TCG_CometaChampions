@@ -57,6 +57,7 @@ namespace CometaChampions.Runtime.Services
         private TextMeshProUGUI? subtitleHintText;
         private TextMeshProUGUI? statusDotsText;
         private RectTransform? progressBarFill;
+        private GameObject? progressBarRoot;
         private Coroutine? activeLoadingRoutine;
 
         private static readonly string[] LoreHints = new[]
@@ -128,6 +129,10 @@ namespace CometaChampions.Runtime.Services
             if (loadingRoot != null) loadingRoot.SetActive(true);
             if (loadingCamera != null) loadingCamera.enabled = true;
             if (cardCarousel != null) cardCarousel.gameObject.SetActive(true);
+            if (headerTitleText != null) headerTitleText.gameObject.SetActive(true);
+            if (subtitleHintText != null) subtitleHintText.gameObject.SetActive(true);
+            if (statusDotsText != null) statusDotsText.gameObject.SetActive(true);
+            if (progressBarRoot != null) progressBarRoot.SetActive(true);
 
             // 5. Begin Asynchronous Scene Loading
             var asyncOp = SceneManager.LoadSceneAsync(sceneName);
@@ -182,15 +187,24 @@ namespace CometaChampions.Runtime.Services
                 yield return null;
             }
 
-            // Wait 1 frame for new scene Awake & Start to run
+            // Wait for new scene Awake & Start to run, and wait for initial frame rendering
             yield return null;
+            yield return new WaitForEndOfFrame();
 
-            // 10. Fade from black revealing the newly loaded scene
-            yield return StartCoroutine(FadeRoutine(1f, 0f, FadeDuration));
-
-            // 11. Deactivate Loading Hierarchy
+            // 10. Completely hide all loading visual elements (3D carousel cards, camera, UI texts, progress bar)
+            // BEFORE fading from black, while STILL completely concealed by the black veil.
+            // This guarantees that the user NEVER sees the loading cards or loading UI when returning to Home!
             if (cardCarousel != null) cardCarousel.gameObject.SetActive(false);
             if (loadingCamera != null) loadingCamera.enabled = false;
+            if (headerTitleText != null) headerTitleText.gameObject.SetActive(false);
+            if (subtitleHintText != null) subtitleHintText.gameObject.SetActive(false);
+            if (statusDotsText != null) statusDotsText.gameObject.SetActive(false);
+            if (progressBarRoot != null) progressBarRoot.SetActive(false);
+
+            // 11. Fade from black revealing ONLY the newly loaded scene
+            yield return StartCoroutine(FadeRoutine(1f, 0f, FadeDuration));
+
+            // 12. Deactivate Loading Hierarchy completely
             if (loadingRoot != null) loadingRoot.SetActive(false);
 
             IsLoading = false;
@@ -345,6 +359,7 @@ namespace CometaChampions.Runtime.Services
             // Progress Bar Background
             var pbBgGo = new GameObject("ProgressBar_Bg", typeof(RectTransform));
             pbBgGo.transform.SetParent(canvasGo.transform, false);
+            progressBarRoot = pbBgGo;
             var pbBgRt = pbBgGo.GetComponent<RectTransform>();
             pbBgRt.anchorMin = new Vector2(0.5f, 0f);
             pbBgRt.anchorMax = new Vector2(0.5f, 0f);

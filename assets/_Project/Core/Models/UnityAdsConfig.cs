@@ -9,11 +9,11 @@ namespace CometaChampions.Core.Models
     [Serializable]
     public class UnityAdsConfig
     {
-        public string androidGameId = "5738200";
-        public string iosGameId = "5738201";
+        public string androidGameId = "6205221";
+        public string iosGameId = "6205220";
         public string androidAdUnitId = "Rewarded_Android";
         public string iosAdUnitId = "Rewarded_iOS";
-        public bool testMode = true;
+        public bool testMode = false;
         public bool enableEditorSimulation = true;
         public int rewardGoldCoins = PlayerProfile.CoinsPerAdReward;
 

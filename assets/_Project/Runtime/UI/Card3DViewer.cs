@@ -1,18 +1,24 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using CometaChampions.Runtime.Cards;
 
 namespace CometaChampions.Runtime.UI
 {
     /// <summary>
     /// Orbit controller for 3D card presentation with free 360° rotation,
     /// touch/mouse drag inertia, 180° flip animation, turntable auto-spin,
-    /// and subtle cursor parallax tilt.
+    /// and subtle cursor parallax tilt restricted strictly to the card's bounds.
     /// </summary>
     public class Card3DViewer : MonoBehaviour
     {
         [Header("Target Card")]
         [SerializeField] private Transform targetCardTransform;
+
+        [Header("Card Interaction Bounds")]
+        [SerializeField] private float cardHitWidth = Card3D.CardWidth;
+        [SerializeField] private float cardHitHeight = Card3D.CardHeight;
 
         [Header("Orbit Drag Settings")]
         [SerializeField] private float dragSensitivity = 0.35f;
@@ -39,8 +45,14 @@ namespace CometaChampions.Runtime.UI
         private bool isDragging = false;
         private Vector2 lastMousePosition;
         private Coroutine activeAnimationRoutine;
+        private static readonly List<RaycastResult> UiRaycastResults = new List<RaycastResult>();
 
         public bool IsAutoSpinning => isAutoSpinning;
+
+        public void SetParallaxTiltEnabled(bool enabled)
+        {
+            enableParallaxTilt = enabled;
+        }
         public float CurrentYaw => currentYaw;
 
         private void Awake()
@@ -63,16 +75,18 @@ namespace CometaChampions.Runtime.UI
 
         private void HandleInput()
         {
-            // Do not start drag if user clicks on UI elements (like buttons or tabs)
             if (Input.GetMouseButtonDown(0))
             {
-                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                Vector2 pointerPos = GetPointerScreenPosition();
+
+                // Only start interaction if pointer is strictly inside the 3D card space and not over blocking UI
+                if (IsPointerOverBlockingUI(pointerPos) || !IsPointerOverCard(pointerPos, out _))
                 {
                     return;
                 }
 
                 isDragging = true;
-                lastMousePosition = Input.mousePosition;
+                lastMousePosition = pointerPos;
                 angularVelocity = Vector2.zero;
 
                 if (activeAnimationRoutine != null)
@@ -83,7 +97,7 @@ namespace CometaChampions.Runtime.UI
             }
             else if (Input.GetMouseButton(0) && isDragging)
             {
-                Vector2 currentPos = Input.mousePosition;
+                Vector2 currentPos = GetPointerScreenPosition();
                 Vector2 delta = currentPos - lastMousePosition;
                 lastMousePosition = currentPos;
 
@@ -126,27 +140,152 @@ namespace CometaChampions.Runtime.UI
             // Normal base orientation from pitch & yaw
             Quaternion baseRotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
 
-            // Optional subtle idle parallax tilt following mouse cursor
+            // Subtle idle parallax tilt ONLY when pointer is actively over the card area
             Quaternion finalRotation = baseRotation;
-            if (enableParallaxTilt && !isDragging && !isAutoSpinning && activeAnimationRoutine == null)
+            if (enableParallaxTilt && !isDragging && !isAutoSpinning && activeAnimationRoutine == null && HasActiveHoverPointer(out Vector2 hoverPos))
             {
-                Vector2 screenNorm = new Vector2(
-                    (Input.mousePosition.x / Screen.width - 0.5f) * 2f,
-                    (Input.mousePosition.y / Screen.height - 0.5f) * 2f
-                );
-                screenNorm = Vector2.ClampMagnitude(screenNorm, 1f);
+                if (!IsPointerOverBlockingUI(hoverPos) && IsPointerOverCard(hoverPos, out Vector2 cardNorm))
+                {
+                    float tiltX = -cardNorm.y * maxTiltAngle;
+                    float tiltY = cardNorm.x * maxTiltAngle;
+                    Quaternion tiltRotation = Quaternion.Euler(tiltX, tiltY, 0f);
 
-                float tiltX = -screenNorm.y * maxTiltAngle;
-                float tiltY = screenNorm.x * maxTiltAngle;
-                Quaternion tiltRotation = Quaternion.Euler(tiltX, tiltY, 0f);
-
-                finalRotation = baseRotation * tiltRotation;
+                    finalRotation = baseRotation * tiltRotation;
+                }
             }
 
             if (targetCardTransform != null)
             {
                 targetCardTransform.localRotation = Quaternion.Slerp(targetCardTransform.localRotation, finalRotation, Time.deltaTime * 24f);
             }
+        }
+
+        private static Vector2 GetPointerScreenPosition()
+        {
+            if (Input.touchCount > 0)
+            {
+                return Input.GetTouch(0).position;
+            }
+            return Input.mousePosition;
+        }
+
+        private static bool HasActiveHoverPointer(out Vector2 screenPos)
+        {
+            if (Input.touchCount > 0)
+            {
+                screenPos = Input.GetTouch(0).position;
+                return true;
+            }
+
+            if (Application.isMobilePlatform)
+            {
+                screenPos = Vector2.zero;
+                return false;
+            }
+
+            screenPos = Input.mousePosition;
+            return screenPos.x >= 0f && screenPos.x <= Screen.width &&
+                   screenPos.y >= 0f && screenPos.y <= Screen.height;
+        }
+
+        private bool IsPointerOverBlockingUI(Vector2 screenPos)
+        {
+            if (EventSystem.current == null) return false;
+
+            var eventData = new PointerEventData(EventSystem.current)
+            {
+                position = screenPos
+            };
+
+            UiRaycastResults.Clear();
+            EventSystem.current.RaycastAll(eventData, UiRaycastResults);
+
+            for (int i = 0; i < UiRaycastResults.Count; i++)
+            {
+                var hitGo = UiRaycastResults[i].gameObject;
+                if (hitGo == null) continue;
+
+                // Ignore world-space canvas elements attached directly to the 3D card itself
+                if (targetCardTransform != null && hitGo.transform.IsChildOf(targetCardTransform))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether the given screen position falls strictly within the 3D space occupied by the card
+        /// in Center_Card3D_Viewport.
+        /// </summary>
+        public bool IsPointerOverCard(Vector2 screenPos, out Vector2 normalizedCardOffset)
+        {
+            normalizedCardOffset = Vector2.zero;
+
+            var cam = showcaseCamera != null ? showcaseCamera : Camera.main;
+            var cardTrans = targetCardTransform != null ? targetCardTransform : transform;
+            if (cam == null || cardTrans == null) return false;
+
+            if (screenPos.x < 0f || screenPos.x > Screen.width || screenPos.y < 0f || screenPos.y > Screen.height)
+            {
+                return false;
+            }
+
+            Ray ray = cam.ScreenPointToRay(screenPos);
+            Vector3 cardCenter = cardTrans.position;
+
+            float halfWidth = Mathf.Max(cardHitWidth * 0.5f, 0.01f);
+            float halfHeight = Mathf.Max(cardHitHeight * 0.5f, 0.01f);
+
+            // 1. Check against the oriented card plane (when not nearly edge-on to the camera ray)
+            Vector3 cardForward = cardTrans.forward;
+            if (Mathf.Abs(Vector3.Dot(ray.direction, cardForward)) > 0.15f)
+            {
+                Plane orientedPlane = new Plane(cardForward, cardCenter);
+                if (orientedPlane.Raycast(ray, out float enterOriented) && enterOriented > 0f)
+                {
+                    Vector3 worldHit = ray.GetPoint(enterOriented);
+                    Vector3 localHit = cardTrans.InverseTransformPoint(worldHit);
+
+                    if (Mathf.Abs(localHit.x) <= halfWidth && Mathf.Abs(localHit.y) <= halfHeight)
+                    {
+                        normalizedCardOffset = new Vector2(
+                            Mathf.Clamp(localHit.x / halfWidth, -1f, 1f),
+                            Mathf.Clamp(localHit.y / halfHeight, -1f, 1f)
+                        );
+                        return true;
+                    }
+                }
+            }
+
+            // 2. Check against the camera-facing viewport footprint centered on the card
+            // (ensures the card remains grabbable within its 2.5x3.5 viewport slot even when rotated near 90° edge-on)
+            Plane viewportPlane = new Plane(-cam.transform.forward, cardCenter);
+            if (viewportPlane.Raycast(ray, out float enterViewport) && enterViewport > 0f)
+            {
+                Vector3 worldHit = ray.GetPoint(enterViewport);
+                Vector3 delta = worldHit - cardCenter;
+
+                float scaleX = Mathf.Max(Mathf.Abs(cardTrans.lossyScale.x), 0.0001f);
+                float scaleY = Mathf.Max(Mathf.Abs(cardTrans.lossyScale.y), 0.0001f);
+
+                float localX = Vector3.Dot(delta, cam.transform.right) / scaleX;
+                float localY = Vector3.Dot(delta, cam.transform.up) / scaleY;
+
+                if (Mathf.Abs(localX) <= halfWidth && Mathf.Abs(localY) <= halfHeight)
+                {
+                    normalizedCardOffset = new Vector2(
+                        Mathf.Clamp(localX / halfWidth, -1f, 1f),
+                        Mathf.Clamp(localY / halfHeight, -1f, 1f)
+                    );
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void ToggleAutoSpin()

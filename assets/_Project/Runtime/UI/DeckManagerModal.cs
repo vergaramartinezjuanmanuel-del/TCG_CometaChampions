@@ -58,25 +58,34 @@ namespace CometaChampions.Runtime.UI
                 if (subtitleTmp != null)
                 {
                     subtitleTmp.text = DeckRulesSubtitleText;
-                    subtitleTmp.fontSize = 12.5f;
+                    subtitleTmp.fontSize = 22f;
                     subtitleTmp.textWrappingMode = TextWrappingModes.Normal;
                 }
-                // var rt = subtitleTransform.GetComponent<RectTransform>();
-                // if (rt != null)
-                // {
-                //     rt.anchoredPosition = new Vector2(0, -68);
-                //     rt.sizeDelta = new Vector2(860, 40);
-                // }
+
+                var rt = subtitleTransform.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchoredPosition = new Vector2(0f, -213f);
+                    rt.sizeDelta = new Vector2(1100f, 120f);
+                }
             }
 
-            // if (deckCountText != null)
-            // {
-            //     var countRt = deckCountText.GetComponent<RectTransform>();
-            //     if (countRt != null)
-            //     {
-            //         countRt.anchoredPosition = new Vector2(0, 40);
-            //     }
-            // }
+            if (cardsGridParent != null)
+            {
+                var gridRt = cardsGridParent.GetComponent<RectTransform>();
+                if (gridRt != null)
+                {
+                    gridRt.anchoredPosition = new Vector2(0f, 80f);
+                    gridRt.sizeDelta = new Vector2(1044f, 440f);
+                }
+
+                var gridLayout = cardsGridParent.GetComponent<GridLayoutGroup>();
+                if (gridLayout != null)
+                {
+                    gridLayout.cellSize = new Vector2(150f, 210f);
+                    gridLayout.spacing = new Vector2(20f, 16f);
+                }
+            }
         }
 
         public void Show(PlayerProfile profile, Action onDeckChanged = null)
@@ -173,7 +182,7 @@ namespace CometaChampions.Runtime.UI
             slot.transform.SetParent(cardsGridParent, false);
 
             var rect = slot.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(110, 160);
+            rect.sizeDelta = new Vector2(150, 210);
 
             // Background card panel
             var bgImg = slot.AddComponent<Image>();

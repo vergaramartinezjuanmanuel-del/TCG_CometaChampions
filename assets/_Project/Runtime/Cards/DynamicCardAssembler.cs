@@ -11,62 +11,6 @@ using CometaChampions.Core.Models;
 
 namespace CometaChampions.Runtime.Cards
 {
-    /// <summary>
-    /// Automatically scales the 750x1050 reference card layout to fit any parent RectTransform.
-    /// </summary>
-    [ExecuteAlways]
-    public class DynamicCardAutoScaler : MonoBehaviour
-    {
-        [SerializeField] private RectTransform referenceRoot;
-
-        public void Initialize(RectTransform refRoot)
-        {
-            referenceRoot = refRoot;
-            UpdateScale();
-        }
-
-        private void OnEnable()
-        {
-            UpdateScale();
-        }
-
-        private void OnRectTransformDimensionsChange()
-        {
-            UpdateScale();
-        }
-
-        private void LateUpdate()
-        {
-            UpdateScale();
-        }
-
-        public void UpdateScale()
-        {
-            if (referenceRoot == null) return;
-            var parentRect = transform as RectTransform;
-            if (parentRect == null) return;
-
-            Rect r = parentRect.rect;
-            float w = r.width;
-            float h = r.height;
-
-            if (w <= 1f || h <= 1f)
-            {
-                w = parentRect.sizeDelta.x;
-                h = parentRect.sizeDelta.y;
-            }
-
-            if (w <= 1f || h <= 1f) return;
-
-            float sx = w / DynamicCardAssembler.ReferenceWidth;
-            float sy = h / DynamicCardAssembler.ReferenceHeight;
-            Vector3 targetScale = new Vector3(sx, sy, 1f);
-            if ((referenceRoot.localScale - targetScale).sqrMagnitude > 0.000001f)
-            {
-                referenceRoot.localScale = targetScale;
-            }
-        }
-    }
 
     /// <summary>
     /// Dynamically assembles any card at runtime using the flat character/arena illustrations
@@ -88,6 +32,49 @@ namespace CometaChampions.Runtime.Cards
 
         private static readonly Dictionary<string, Texture2D> RenderedCardTextures = new(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, Sprite> RenderedCardSprites = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly List<string> RenderedCardInsertionOrder = new();
+
+        public static int CachedDynamicTextureCount => RenderedCardTextures.Count;
+        public static int CachedDynamicSpriteCount => RenderedCardSprites.Count;
+
+        /// <summary>
+        /// Safely trims oldest procedurally rendered card textures down to maxEntries.
+        /// Intended to be called during scene transitions or low-memory events so active UI references are not disrupted.
+        /// </summary>
+        public static int TrimDynamicCache(int maxEntries)
+        {
+            int safeMax = Mathf.Max(0, maxEntries);
+            int removed = 0;
+
+            while (RenderedCardInsertionOrder.Count > safeMax && RenderedCardInsertionOrder.Count > 0)
+            {
+                string oldestKey = RenderedCardInsertionOrder[0];
+                RenderedCardInsertionOrder.RemoveAt(0);
+
+                if (RenderedCardSprites.TryGetValue(oldestKey, out var oldSprite))
+                {
+                    RenderedCardSprites.Remove(oldestKey);
+                    if (oldSprite != null)
+                    {
+                        if (Application.isPlaying) UnityEngine.Object.Destroy(oldSprite);
+                        else UnityEngine.Object.DestroyImmediate(oldSprite);
+                    }
+                }
+
+                if (RenderedCardTextures.TryGetValue(oldestKey, out var oldTex))
+                {
+                    RenderedCardTextures.Remove(oldestKey);
+                    if (oldTex != null)
+                    {
+                        if (Application.isPlaying) UnityEngine.Object.Destroy(oldTex);
+                        else UnityEngine.Object.DestroyImmediate(oldTex);
+                    }
+                    removed++;
+                }
+            }
+
+            return removed;
+        }
 
         /// <summary>
         /// Loads or dynamically creates the TMP_FontAsset for "SemiExpanded ExtraBold Italic".
@@ -617,6 +604,10 @@ namespace CometaChampions.Runtime.Cards
             }
 
             RenderedCardTextures[cacheKey] = resultTex;
+            if (!RenderedCardInsertionOrder.Contains(cacheKey))
+            {
+                RenderedCardInsertionOrder.Add(cacheKey);
+            }
             return resultTex;
         }
 

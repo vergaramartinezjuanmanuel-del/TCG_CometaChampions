@@ -77,6 +77,8 @@ namespace CometaChampions.Core.Models
 
         public bool SfxEnabled { get; set; } = true;
         public bool MusicEnabled { get; set; } = true;
+        public string GraphicsQualityPreference { get; set; } = "Auto";
+        public bool AdaptiveQualityEnabled { get; set; } = true;
 
         public DateTime? LastLoginDateUtc
         {

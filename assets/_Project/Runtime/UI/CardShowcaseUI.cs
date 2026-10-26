@@ -331,9 +331,26 @@ namespace CometaChampions.Runtime.UI
 
         private void UpdateReversoButtonsVisual()
         {
-            SetButtonHighlight(reversoOroButton, currentReverso == "oro");
-            SetButtonHighlight(reversoColorButton, currentReverso == "color");
-            SetButtonHighlight(reversoBiButton, currentReverso == "bi");
+            SetReversoButtonHighlight(reversoOroButton, currentReverso == "oro");
+            SetReversoButtonHighlight(reversoColorButton, currentReverso == "color");
+            SetReversoButtonHighlight(reversoBiButton, currentReverso == "bi");
+        }
+
+        private void SetReversoButtonHighlight(Button btn, bool active)
+        {
+            if (btn == null) return;
+            float alpha = active ? 1f : 0.55f;
+            var img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = new Color(1f, 1f, 1f, alpha);
+            }
+            var txt = btn.GetComponentInChildren<TMP_Text>();
+            if (txt != null)
+            {
+                var c = txt.color;
+                txt.color = new Color(c.r, c.g, c.b, alpha);
+            }
         }
 
         private void UpdateFoilButtonsVisual()
